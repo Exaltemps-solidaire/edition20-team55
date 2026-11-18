@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parc Sport dans la Ville, prototype</title>
+<style>
+:root{
+  --canvas:#f5f5f7;--surface:#fff;--subtle:#f7f7f9;--text:#242429;--strong:#18181b;--muted:#686872;--faint:#9a9aa3;--border:#e6e6eb;--border2:#d4d4da;
+  --accent:#635bff;--accent-soft:#f0efff;--primary:#2a2a30;--primary-h:#3a3a42;
+  --ok:#00843c;--ok-f:#009b70;--ok-bg:#e6f6ee;
+  --warn:#b45700;--warn-f:#dd7500;--warn-bg:#fff2e3;
+  --bad:#d62231;--bad-f:#ed3863;--bad-bg:#fdecee;
+  --blue:#0b6bcf;--blue-f:#2f80ed;--blue-bg:#e8f1fc;
+  --grey:#6b6b75;--grey-f:#a1a1aa;--grey-bg:#efeff2;
+  --r-card:16px;--r-panel:20px;--r-modal:22px;--r-ctl:10px;--r-chip:12px;
+  --sh-card:0 2px 5px rgb(24 24 35/4%),0 8px 22px rgb(24 24 35/6%);
+  --sh-ctl:inset 0 1px rgb(255 255 255/72%),0 2px 4px rgb(24 24 35/7%);
+  --sh-modal:0 0 0 1px rgb(24 24 40/4%),0 2px 4px rgb(24 24 40/5%),0 14px 32px -8px rgb(24 24 40/18%),0 40px 90px -20px rgb(24 24 40/30%);
+  --relief:inset 0 1px 0 rgb(255 255 255/12%),0 1px 2px rgb(0 0 0/14%),0 4px 12px rgb(24 24 27/10%);
+  --map-land:#ececf1;--map-stroke:#d0d0d8;--map-region:#e2e2ea;
+  --motion:160ms cubic-bezier(.2,.8,.2,1);
+  font-family:Inter,"Inter Variable",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+[data-theme=dark]{
+  --canvas:#18181b;--surface:#212125;--subtle:#2b2b31;--text:#e4e4e9;--strong:#f4f4f7;--muted:#9d9da8;--faint:#75757f;--border:#33333a;--border2:#4a4a53;
+  --accent:#a49dff;--accent-soft:#2c2a40;--primary:#3a3a43;--primary-h:#45454f;
+  --ok:#45de78;--ok-f:#32e5ae;--ok-bg:#163126;--warn:#ffaf45;--warn-f:#ffb347;--warn-bg:#3a2a15;
+  --bad:#ff626b;--bad-f:#ff6487;--bad-bg:#3d1c22;--blue:#6ea8ff;--blue-f:#5a9bff;--blue-bg:#1a2a42;--grey:#a1a1aa;--grey-f:#6b6b75;--grey-bg:#2b2b31;
+  --sh-card:0 2px 5px rgb(0 0 0/18%),0 8px 22px rgb(0 0 0/22%);--sh-ctl:0 2px 4px rgb(0 0 0/14%);
+  --sh-modal:inset 0 1px 0 rgb(255 255 255/6%),0 0 0 1px rgb(0 0 0/45%),0 28px 80px -16px rgb(0 0 0/75%);
+  --relief:inset 0 1px 0 rgb(255 255 255/10%),0 1px 2px rgb(0 0 0/50%);
+  --map-land:#2a2a30;--map-stroke:#3c3c45;--map-region:#323239;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--canvas);color:var(--text);font-size:14px;line-height:1.45;transition:background var(--motion),color var(--motion)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea,select{font:inherit;color:inherit}
+.num{font-variant-numeric:tabular-nums}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:8px}
+
+/* header */
+.hdr{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--canvas) 86%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.hdr-in{display:flex;align-items:center;gap:12px;padding:12px 28px}
+.mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(140deg,#6d64ff,#4a3fd6);display:grid;place-items:center;color:#fff;box-shadow:var(--relief);flex:none}
+.ttl{font-weight:780;font-size:16px;color:var(--strong);letter-spacing:-.01em}
+.crumbs{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;min-width:0;overflow:hidden;white-space:nowrap}
+.crumbs button{color:var(--muted);padding:3px 6px;border-radius:7px}.crumbs button:hover{background:var(--subtle);color:var(--text)}
+.crumbs .cur{color:var(--text);font-weight:600}
+.sp{flex:1}
+.ctl{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 13px;border-radius:var(--r-chip);background:var(--surface);border:1px solid var(--border);box-shadow:var(--sh-ctl);font-size:13px;font-weight:550;white-space:nowrap;transition:var(--motion)}
+.ctl:hover{border-color:var(--border2);transform:translateY(-1px)}
+.ctl kbd{font:inherit;font-size:11px;color:var(--faint);border:1px solid var(--border);border-radius:5px;padding:0 5px}
+.ctl.icon{width:36px;padding:0;justify-content:center}
+.ctl.on{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 40%,transparent);color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 16px;border-radius:var(--r-ctl);font-weight:620;font-size:13.5px;transition:var(--motion);white-space:nowrap}
+.btn.pri{background:var(--primary);color:#fff;box-shadow:var(--relief)}.btn.pri:hover{background:var(--primary-h);transform:translateY(-1px)}
+.btn.sec{background:var(--surface);border:1px solid var(--border2);box-shadow:var(--sh-ctl)}.btn.sec:hover{border-color:var(--muted)}
+.btn.ghost{color:var(--muted)}.btn.ghost:hover{background:var(--subtle);color:var(--text)}
+.btn.ok{background:var(--ok-f);color:#fff}.btn.bad{background:var(--bad);color:#fff}
+.btn:disabled{opacity:.45;pointer-events:none}
+
+/* stepper */
+.steps{display:flex;align-items:center;gap:8px;padding:0 28px 12px;overflow-x:auto}
+.steps .lab{font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-right:4px;white-space:nowrap}
+.step{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 6px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;white-space:nowrap;color:var(--muted);transition:var(--motion)}
+.step i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--subtle);color:var(--muted)}
+.step.done{color:var(--text)}.step.done i{background:var(--ok-f);color:#fff}
+.step.cur{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);font-weight:600}.step.cur i{background:var(--accent);color:#fff}
+.hint{margin-left:6px;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.hint b{color:var(--text)}
+
+/* layout */
+.wrap{display:grid;grid-template-columns:1fr;gap:18px;padding:20px 28px 40px;transition:padding var(--motion)}
+body.phone-open .wrap{padding-right:418px}
+h1{font-size:26px;font-weight:820;color:var(--strong);letter-spacing:-.02em}
+.sub{color:var(--muted);margin-top:2px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.card{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh-card);border:1px solid color-mix(in srgb,var(--border) 60%,transparent)}
+.kpi{padding:14px 16px;text-align:left;position:relative;overflow:hidden;transition:var(--motion);border:1px solid transparent}
+.kpi:hover{transform:translateY(-2px)}
+.kpi.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),var(--sh-card)}
+.kpi .k-top{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted)}
+.kpi .v{font-size:30px;font-weight:780;color:var(--strong);margin-top:4px;letter-spacing:-.02em}
+.kpi .c{font-size:11.5px;color:var(--faint)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(360px,1fr);gap:18px;align-items:start}
+.sec-h{display:flex;align-items:center;gap:10px;padding:16px 18px 0}
+.sec-h h2{font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.count{font-size:11px;font-weight:700;background:var(--subtle);color:var(--muted);border-radius:999px;padding:1px 8px}
+.seg{display:inline-flex;background:var(--subtle);border:1px solid var(--border);border-radius:var(--r-chip);padding:3px}
+.seg button{padding:5px 12px;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--sh-ctl)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:12px 18px 0}
+.chip{height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:550;color:var(--muted);display:inline-flex;align-items:center;gap:6px;transition:var(--motion)}
+.chip:hover{color:var(--text);border-color:var(--border2)}
+.chip.on{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.search{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);margin-left:auto;min-width:200px}
+.search input{border:0;outline:0;background:none;width:100%;font-size:12.5px}
+
+/* map */
+.mapbox{position:relative;height:610px;margin:8px 10px 10px;border-radius:14px;overflow:hidden;background:radial-gradient(120% 90% at 40% 35%,color-mix(in srgb,var(--accent) 5%,var(--surface)),var(--surface))}
+#map{width:100%;height:100%;display:block;cursor:grab}
+#map .land{fill:var(--map-land);stroke:var(--map-stroke);stroke-width:1.2;vector-effect:non-scaling-stroke}
+.pin{cursor:pointer;transition:opacity var(--motion)}
+.pin:hover .halo{opacity:.35}
+.halo{opacity:0;transition:opacity var(--motion)}
+.mlabel{font-weight:650;fill:var(--text);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
+.legend{position:absolute;left:14px;bottom:14px;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:12px;box-shadow:var(--sh-card)}
+.legend div{display:flex;align-items:center;gap:8px}
+.legend small{color:var(--faint);font-size:10.5px;max-width:210px}
+.zoomctl{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:6px}
+.maptip{position:absolute;pointer-events:none;background:var(--strong);color:var(--canvas);font-size:12px;padding:6px 9px;border-radius:9px;opacity:0;transform:translate(-50%,-120%);transition:opacity 120ms;white-space:nowrap}
+[data-theme=dark] .maptip{background:#f4f4f7;color:#18181b}
+.fresh{position:absolute;right:14px;bottom:14px;font-size:11.5px;color:var(--muted);background:color-mix(in srgb,var(--surface) 90%,transparent);border:1px solid var(--border);border-radius:999px;padding:5px 10px;display:flex;align-items:center;gap:6px}
+.live{width:7px;height:7px;border-radius:50%;background:var(--ok-f);box-shadow:0 0 0 0 var(--ok-f);animation:live 2s infinite}
+@keyframes live{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok-f) 60%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+
+/* status badge */
+.st{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px 0 6px;border-radius:999px;font-size:12px;font-weight:620;white-space:nowrap}
+.st svg{width:14px;height:14px}
+.s-ok{background:var(--ok-bg);color:var(--ok)}.s-warn{background:var(--warn-bg);color:var(--warn)}.s-bad{background:var(--bad-bg);color:var(--bad)}.s-blue{background:var(--blue-bg);color:var(--blue)}.s-grey{background:var(--grey-bg);color:var(--grey)}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:650;padding:2px 7px;border-radius:7px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+.tag.rec{border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad);background:var(--bad-bg)}
+.tag.esc{border-color:color-mix(in srgb,var(--warn) 40%,transparent);color:var(--warn);background:var(--warn-bg)}
+
+/* side panel */
+.side{display:flex;flex-direction:column;gap:18px;position:sticky;top:146px}
+.list{padding:8px 8px 10px;max-height:560px;overflow:auto}
+.row{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;padding:11px 10px;border-radius:12px;transition:var(--motion)}
+.row:hover{background:var(--subtle)}
+.row.sel{background:var(--accent-soft)}
+.row .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none}
+.row .t{font-weight:620;color:var(--strong);font-size:13.5px}
+.row .m{color:var(--muted);font-size:12px}
+.row .r{margin-left:auto;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.new{animation:flash 1.6s ease}
+@keyframes flash{0%{background:var(--accent-soft);transform:scale(1.01)}100%{background:transparent}}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+
+/* table */
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:650;text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tbody tr{cursor:pointer;transition:background var(--motion)}tbody tr:hover{background:var(--subtle)}
+.tblwrap{max-height:610px;overflow:auto;margin:8px 10px 10px;border-radius:12px}
+
+/* centre panel */
+.cp-h{padding:18px 18px 4px}
+.cp-h .eyebrow{font-size:11.5px;color:var(--muted);font-weight:600}
+.cp-h h3{font-size:20px;font-weight:780;color:var(--strong);letter-spacing:-.01em;margin-top:2px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 18px}
+.meta div{background:var(--subtle);border-radius:12px;padding:9px 11px;font-size:12px;color:var(--muted)}
+.meta b{display:block;color:var(--text);font-size:13px;font-weight:620}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgb(20 20 30/24%);backdrop-filter:blur(3px);z-index:80;display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity 180ms}
+[data-theme=dark] .ov{background:rgb(0 0 0/55%)}
+.ov.show{opacity:1;pointer-events:auto}
+.modal{width:min(980px,calc(100vw - 48px));max-height:calc(100vh - 64px);background:var(--surface);border-radius:var(--r-modal);box-shadow:var(--sh-modal);display:flex;flex-direction:column;transform:translateY(14px) scale(.985);transition:transform 220ms cubic-bezier(.2,.8,.2,1)}
+.ov.show .modal{transform:none}
+.modal.sm{width:min(520px,calc(100vw - 48px))}
+.m-h{display:flex;gap:14px;align-items:flex-start;padding:22px 24px 8px}
+.m-ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;flex:none}
+.m-h .eyebrow{font-size:12px;font-weight:600;color:var(--muted)}
+.m-h h3{font-size:20px;font-weight:780;color:var(--strong);letter-spacing:-.01em}
+.m-b{padding:10px 24px 18px;overflow:auto}
+.m-f{display:flex;align-items:center;gap:10px;padding:14px 24px 20px;border-top:1px solid var(--border)}
+.m-f .info{font-size:12px;color:var(--muted);margin-right:auto}
+.x{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--muted);margin-left:auto}.x:hover{background:var(--subtle)}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:18px}
+.box{background:var(--subtle);border-radius:14px;padding:14px}
+.box h4{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:650;margin-bottom:10px}
+.tl{position:relative;padding-left:22px}
+.tl:before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:var(--border)}
+.tli{position:relative;padding-bottom:14px}
+.tli:last-child{padding-bottom:0}
+.tli:before{content:"";position:absolute;left:-21px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2.5px solid var(--c,var(--grey-f))}
+.tli .d{font-size:11px;color:var(--faint);font-weight:600}
+.tli .w{font-weight:620;font-size:13px;color:var(--strong)}
+.tli .s{font-size:12px;color:var(--muted)}
+.alert{display:flex;gap:10px;padding:12px 14px;border-radius:12px;font-size:12.5px}
+.alert.bad{background:var(--bad-bg);color:var(--bad)}.alert.info{background:var(--blue-bg);color:var(--blue)}.alert.warn{background:var(--warn-bg);color:var(--warn)}
+.alert b{display:block}
+.photos{display:flex;gap:10px}
+.ph{flex:1;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:4/3;background:var(--border)}
+.ph span{position:absolute;left:8px;bottom:8px;font-size:11px;font-weight:650;background:rgb(0 0 0/55%);color:#fff;padding:2px 7px;border-radius:6px}
+.fld{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.fld label{font-size:12px;font-weight:620;color:var(--muted)}
+.inp{height:40px;border:1px solid var(--border2);border-radius:var(--r-ctl);padding:0 12px;background:var(--surface);outline:0}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{padding:8px 12px;border-radius:10px;border:1px solid var(--border2);font-size:13px;font-weight:560;background:var(--surface)}
+.opt.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.qr{width:92px;height:92px;background:#fff;border-radius:10px;padding:6px;display:grid;grid-template-columns:repeat(21,1fr);flex:none;border:1px solid var(--border)}
+.qr i{background:#18181b}.qr b{background:#fff}
+
+/* phone */
+.phone-dock{position:fixed;right:20px;top:146px;bottom:16px;width:380px;z-index:30;display:flex;flex-direction:column;align-items:center;transform:translateX(430px);transition:transform 300ms cubic-bezier(.2,.8,.2,1)}
+body.phone-open .phone-dock{transform:none}
+.dock-h{width:100%;display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;color:var(--muted);font-weight:600}
+.phone{width:350px;flex:1;max-height:740px;background:#0e0e11;border-radius:50px;padding:11px;box-shadow:0 30px 60px -20px rgb(0 0 0/45%),inset 0 0 0 2px #2a2a30}
+.scr{width:100%;height:100%;border-radius:40px;overflow:hidden;background:#f4f4f7;color:#242429;display:flex;flex-direction:column;position:relative;font-size:14px}
+[data-theme=dark] .scr{background:#f4f4f7;color:#242429}
+.sbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;font-size:13px;font-weight:650;flex:none;position:relative}
+.sbar:after{content:"";position:absolute;left:50%;top:9px;width:96px;height:26px;margin-left:-48px;background:#0e0e11;border-radius:20px}
+.net{display:flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 8px;border-radius:999px;cursor:pointer;transition:var(--motion);z-index:2}
+.net.off{background:#ff9f0a;color:#fff}.net.on{background:#e6f6ee;color:#00843c}
+.app-h{padding:4px 18px 12px;flex:none}
+.app-h .hi{font-size:12px;color:#686872;font-weight:600}
+.app-h .big{font-size:22px;font-weight:800;color:#18181b;letter-spacing:-.02em}
+.back{display:inline-flex;align-items:center;gap:4px;color:#635bff;font-weight:600;font-size:13.5px;margin-bottom:4px}
+.app-b{flex:1;min-height:0;overflow:auto;padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+.pc{background:#fff;border-radius:16px;padding:13px 14px;box-shadow:0 1px 2px rgb(0 0 0/5%)}
+.pc .t{font-weight:650;color:#18181b;font-size:14px}
+.pc .m{font-size:12px;color:#686872}
+.pl{font-size:11px;font-weight:700;color:#686872;text-transform:uppercase;letter-spacing:.05em;margin:6px 4px 0}
+.scanbtn{background:linear-gradient(140deg,#6d64ff,#4a3fd6);color:#fff;border-radius:18px;padding:18px;display:flex;align-items:center;gap:14px;text-align:left;box-shadow:0 10px 24px -10px #4a3fd6}
+.scanbtn .t{font-size:16px;font-weight:750;color:#fff}.scanbtn .m{font-size:12px;opacity:.85;color:#fff}
+.pbtn{height:50px;border-radius:14px;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;flex:none}
+.pbtn.pri{background:#2a2a30;color:#fff}.pbtn.ok{background:#009b70;color:#fff}.pbtn.ko{background:#fff;color:#d62231;border:1.5px solid #f3b6bd}
+.pbtn:disabled{opacity:.4}
+.pchips{display:flex;flex-wrap:wrap;gap:6px}
+.pchips button{padding:8px 12px;border-radius:11px;background:#fff;border:1px solid #dcdce2;font-size:13px;font-weight:560;color:#242429}
+.pchips button.on{background:#2a2a30;color:#fff;border-color:#2a2a30}
+.urg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.urg button{padding:10px 4px;border-radius:12px;background:#fff;border:1.5px solid #dcdce2;font-size:12.5px;font-weight:650;color:#242429}
+.urg button.on.u1{border-color:#2f80ed;color:#0b6bcf;background:#e8f1fc}.urg button.on.u2{border-color:#dd7500;color:#b45700;background:#fff2e3}.urg button.on.u3{border-color:#d62231;color:#fff;background:#d62231}
+.ptxt{width:100%;min-height:74px;border-radius:12px;border:1px solid #dcdce2;padding:10px 12px;resize:none;outline:0;font-size:13.5px;background:#fff;color:#242429}
+.ptxt:focus{border-color:#635bff}
+.photo-slot{height:120px;border-radius:14px;border:1.5px dashed #b9b9c4;display:flex;align-items:center;justify-content:center;gap:8px;color:#635bff;font-weight:650;background:#fff;overflow:hidden;width:100%}
+.viewfinder{flex:none;height:250px;background:#0e0e11;position:relative;display:flex;align-items:center;justify-content:center;min-height:270px;border-radius:0}
+.vf-box{width:190px;height:190px;position:relative}
+.vf-box:before,.vf-box:after{content:"";position:absolute;inset:0;border:3px solid #fff;border-radius:22px;clip-path:polygon(0 0,28% 0,28% 6%,6% 6%,6% 28%,0 28%,0 72%,6% 72%,6% 94%,28% 94%,28% 100%,72% 100%,72% 94%,94% 94%,94% 72%,100% 72%,100% 28%,94% 28%,94% 6%,72% 6%,72% 0,100% 0,100% 100%,0 100%)}
+.vf-line{position:absolute;left:10%;right:10%;height:2px;background:#7d76ff;box-shadow:0 0 12px #7d76ff;animation:scan 1.8s ease-in-out infinite}
+@keyframes scan{0%,100%{top:12%}50%{top:86%}}
+.qitem{display:flex;gap:10px;align-items:center}
+.qst{font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.q-wait{background:#fff2e3;color:#b45700}.q-send{background:#e8f1fc;color:#0b6bcf}.q-ok{background:#e6f6ee;color:#00843c}
+.spin{width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block;animation:sp .8s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.home-ind{height:5px;width:130px;background:#18181b;border-radius:4px;margin:8px auto;flex:none;opacity:.85}
+.ptoast{position:absolute;left:10px;right:10px;top:50px;background:rgb(250 250 252/96%);backdrop-filter:blur(10px);border-radius:18px;padding:11px 13px;box-shadow:0 12px 30px -8px rgb(0 0 0/30%);display:flex;gap:10px;transform:translateY(-220%);opacity:0;transition:transform 360ms cubic-bezier(.2,.9,.2,1.1),opacity 200ms cubic-bezier(.2,.9,.2,1.1);z-index:5;cursor:pointer;pointer-events:none}
+.ptoast.show{transform:none;opacity:1;pointer-events:auto}
+
+/* teams toasts */
+.toasts{position:fixed;left:20px;bottom:20px;z-index:90;display:flex;flex-direction:column;gap:10px;width:360px}
+.toast{background:var(--surface);border-radius:16px;box-shadow:var(--sh-modal);overflow:hidden;animation:tin 380ms cubic-bezier(.2,.9,.2,1.1)}
+@keyframes tin{from{transform:translateY(20px);opacity:0}}
+.toast .th{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12px;font-weight:650;color:#fff}
+.toast .tb{padding:12px 14px;font-size:13px}
+.toast .tb b{color:var(--strong)}
+.toast .tf{display:flex;gap:8px;padding:0 14px 12px}
+.teams{background:#5b5fc7}.mail{background:#0f6cbd}.sys{background:var(--primary)}
+.pulse-ring{animation:ring 1.4s ease-out 3}
+@keyframes ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+.fictif{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--warn);background:var(--warn-bg);padding:4px 10px;border-radius:999px}
+.arch{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.arch .box b{display:block;color:var(--strong);font-size:13px;margin-bottom:4px}
+.arch .box{font-size:12px;color:var(--muted)}
+.pill-std{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--ok-bg);color:var(--ok)}
+.pill-pr{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--accent-soft);color:var(--accent)}
+.flowline{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;margin-top:14px}
+.flowline span{background:var(--subtle);border-radius:8px;padding:5px 9px;font-weight:560}
+.cmd{width:min(620px,calc(100vw - 32px))}
+.cmd input{width:100%;height:56px;border:0;outline:0;background:none;font-size:17px;padding:0 22px;border-bottom:1px solid var(--border)}
+.cmd .res{max-height:380px;overflow:auto;padding:8px}
+
+@media (max-width:1180px){.main{grid-template-columns:1fr}.side{position:static}body.phone-open .wrap{padding-right:28px}.kpis{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:760px){
+  .hdr-in{padding:10px 14px;gap:8px}.crumbs,.hide-sm{display:none}.steps{padding:0 14px 10px}.hint{display:none}
+  .wrap{padding:14px}.kpis{grid-template-columns:repeat(5,150px);overflow-x:auto;padding-bottom:4px}
+  h1{font-size:22px}.mapbox{height:430px}.grid2{grid-template-columns:1fr}.arch{grid-template-columns:1fr 1fr}
+  .phone-dock{inset:0;width:auto;top:0;bottom:0;right:0;background:var(--canvas);padding:10px;z-index:60;transform:translateY(100%)}
+  body.phone-open .phone-dock{transform:none}.phone{width:100%;max-height:none;border-radius:0;padding:0;box-shadow:none;background:none}.scr{border-radius:22px}.sbar:after{display:none}
+  .toasts{left:10px;right:10px;width:auto}.search{min-width:0;flex:1}
+}
+</style>
+</head>
+<body>
+<header class="hdr">
+ <div class="hdr-in">
+  <div class="mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+  <div class="ttl">Parc <span class="hide-sm">Sport dans la Ville</span></div>
+  <nav class="crumbs" id="crumbs"></nav>
+  <div class="sp"></div>
+  <span class="fictif hide-sm">Données fictives</span>
+  <button class="ctl hide-sm" id="btnSearch"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Rechercher <kbd>⌘ K</kbd></button>
+  <button class="ctl" id="btnRole" title="Changer de profil"></button>
+  <button class="ctl" id="btnPhone"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg><span class="hide-sm">Téléphone RST</span></button>
+  <button class="ctl icon" id="btnTheme" title="Thème clair ou sombre"></button>
+  <button class="ctl icon" id="btnArch" title="Sous le capot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></button>
+ </div>
+ <div class="steps" id="steps"></div>
+</header>
+
+<main class="wrap">
+ <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+  <div><h1 id="pageTitle">Où devons-nous agir ?</h1><div class="sub" id="pageSub">80 terrains, 5 régions, jeu de données fictif. Un clic pour descendre jusqu'à l'équipement.</div></div>
+  <div class="sp"></div>
+  <button class="btn ghost" id="btnReset"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Réinitialiser la démo</button>
+  <button class="btn pri" id="btnGuide"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Jouer le scénario</button>
+ </div>
+ <section class="kpis" id="kpis"></section>
+ <section class="main">
+  <div class="card" id="mapCard">
+   <div class="sec-h"><h2 id="mapTitle">État du parc</h2><span class="tag" style="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent)">Vision V2</span><span class="count num" id="mapCount"></span><div class="sp"></div>
+    <div class="seg" id="viewSeg"><button data-v="map" class="on">Carte</button><button data-v="list">Liste</button></div></div>
+   <div class="chips" id="chips"></div>
+   <div id="mapView">
+    <div class="mapbox" id="mapbox">
+     <svg id="map" viewBox="0 0 700 640" preserveAspectRatio="xMidYMid meet"></svg>
+     <div class="maptip" id="tip"></div>
+     <div class="zoomctl"><button class="ctl icon" id="zin">+</button><button class="ctl icon" id="zout">−</button><button class="ctl icon" id="zhome" title="France entière"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 3l9 8v10H3z"/></svg></button></div>
+     <div class="legend" id="legend"></div>
+     <div class="fresh"><span class="live"></span><span id="freshTxt">Dernière info synchronisée : à l'instant</span></div>
+    </div>
+   </div>
+   <div id="listView" style="display:none"><div class="tblwrap"><table><thead><tr><th data-s="name">Terrain</th><th data-s="eq">Équipement</th><th data-s="st">État</th><th data-s="last">Dernier événement</th><th data-s="rst">RST</th><th data-s="sj">Situation</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
+  </div>
+  <aside class="side" id="side"></aside>
+ </section>
+</main>
+
+<div class="phone-dock" id="dock">
+ <div class="dock-h"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/></svg>Power Apps Mobile, vue du RST<div class="sp"></div><button class="btn ghost" style="height:28px;padding:0 8px" id="closePhone">Fermer</button></div>
+ <div class="phone"><div class="scr" id="scr"></div></div>
+</div>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ============ helpers ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+const pick=a=>a[Math.floor(rnd()*a.length)];
+const I={
+ ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>',
+ warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 6v7M12 17.5v.5"/></svg>',
+ bad:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3 2 20h20z" stroke-linejoin="round"/><path d="M12 10v4M12 17v.3"/></svg>',
+ blue:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z" stroke-linejoin="round"/></svg>',
+ grey:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17v.3"/></svg>',
+ qr:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><rect x="8" y="8" width="3" height="3"/><rect x="13" y="8" width="3" height="3"/><rect x="8" y="13" width="3" height="3"/><path d="M13 13h3v3"/></svg>',
+ cam:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5"/></svg>',
+ chev:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 6 6 6-6 6"/></svg>',
+ back:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m15 6-6 6 6 6"/></svg>',
+ x:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+ teams:'<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><rect x="2" y="6" width="12" height="12" rx="2"/><path d="M5 9h6M8 9v6" stroke="#5b5fc7" stroke-width="1.8"/><circle cx="18" cy="7" r="2.5"/><path d="M15 11h6v5a3 3 0 0 1-6 0z"/></svg>',
+ mail:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+ sun:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></svg>',
+ moon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+ user:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+ wifi:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5v.2"/></svg>',
+ plane:'<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8.5l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-6z"/></svg>',
+};
+const ST={
+ ok:{l:'Vérifié, RAS',c:'s-ok',f:'var(--ok-f)',i:I.ok,rank:1},
+ grey:{l:'Pas d\'info récente',c:'s-grey',f:'var(--grey-f)',i:I.grey,rank:2},
+ blue:{l:'Réparé, à vérifier',c:'s-blue',f:'var(--blue-f)',i:I.blue,rank:3},
+ warn:{l:'Incident ouvert',c:'s-warn',f:'var(--warn-f)',i:I.warn,rank:4},
+ bad:{l:'Danger',c:'s-bad',f:'var(--bad)',i:I.bad,rank:5},
+};
+const badge=s=>`<span class="st ${ST[s].c}">${ST[s].i}${ST[s].l}</span>`;
+const fmtD=d=>d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+const fmtDT=d=>fmtD(d)+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+const NOW=new Date(2026,10,18,15,40);
+const daysAgo=n=>new Date(NOW.getTime()-n*864e5);
+
+/* ============ données fictives ============ */
+const REG={HDF:'Hauts-de-France',IDF:'Île-de-France',PDL:'Pays de la Loire',ARA:'Auvergne-Rhône-Alpes',PACA:'Provence-Alpes-Côte d\'Azur'};
+const CITIES=[
+ ['Tourcoing','HDF',3.16,50.72,1],['Roubaix','HDF',3.18,50.69,4],['Mons-en-Barœul','HDF',3.11,50.64,1],['Lille','HDF',3.06,50.63,1],['Lens','HDF',2.83,50.43,1],['Valenciennes','HDF',3.52,50.36,2],
+ ['Villiers-le-Bel','IDF',2.39,49.01,1],['Sarcelles','IDF',2.38,48.99,4],['Gonesse','IDF',2.45,48.99,3],['L\'Île-Saint-Denis','IDF',2.34,48.94,1],['Saint-Denis','IDF',2.36,48.935,2],['Drancy','IDF',2.45,48.93,1],['Pantin','IDF',2.40,48.895,2],['Bondy','IDF',2.48,48.90,1],['Saint-Ouen','IDF',2.33,48.91,2],['Bobigny','IDF',2.44,48.91,1],['Paris 19e','IDF',2.38,48.88,1],['Ris-Orangis','IDF',2.41,48.65,2],['Corbeil-Essonnes','IDF',2.48,48.61,2],
+ ['Nantes','PDL',-1.55,47.22,1],['Rezé','PDL',-1.57,47.18,1],
+ ['Villefranche-sur-Saône','ARA',4.72,45.99,3],['Rillieux-la-Pape','ARA',4.90,45.82,3],['Lyon','ARA',4.84,45.76,6],['Vaulx-en-Velin','ARA',4.92,45.78,3],['Villeurbanne','ARA',4.88,45.77,1],['Saint-Fons','ARA',4.85,45.71,2],['Bron','ARA',4.91,45.73,2],['Décines','ARA',4.96,45.77,1],['Saint-Chamond','ARA',4.50,45.48,4],['Givors','ARA',4.77,45.59,2],['Saint-Étienne','ARA',4.39,45.44,2],['La Ricamarie','ARA',4.37,45.40,2],['Grenoble','ARA',5.72,45.19,2],['Échirolles','ARA',5.72,45.14,1],['Annemasse','ARA',6.23,46.19,1],['Cluses','ARA',6.58,46.06,1],['Chambéry','ARA',5.92,45.57,2],
+ ['Marseille','PACA',5.37,43.30,6],['Aubagne','PACA',5.57,43.29,1]
+];
+const FIRST=['Karim','Léa','Yanis','Inès','Moussa','Sarah','Hugo','Nadia','Bilal','Camille','Ibrahim','Julie','Mehdi','Chloé','Rayan','Aïcha'];
+const LAST=['B.','M.','D.','K.','L.','T.','R.','S.','G.','P.'];
+const SJ=['Campus propriétaire','Convention avec la ville','Terrain sans convention','Terrain de la ville'];
+const SJwho={'Campus propriétaire':'Association','Convention avec la ville':'Ville (convention)','Terrain sans convention':'À arbitrer','Terrain de la ville':'Ville'};
+const EQT=[['But de football','BF'],['Panier de basket','PB'],['Cage multisport','CM'],['Agrès street workout','AG'],['Filet pare-ballons','FP'],['Clôture','CL'],['Sol synthétique','SO']];
+const PRESTA=['Prestataire A (fictif)','Prestataire B (fictif)','Services techniques de la ville','Équipe maintenance asso'];
+let centres=[],eqs=[];
+function build(){
+ seed=11;centres=[];eqs=[];
+ const P=([lon,lat])=>[22+(lon+5.2)*66*0.69,18+(51.4-lat)*66];
+ let total=0;
+ CITIES.forEach(([city,reg,lon,lat,n])=>{
+  for(let k=1;k<=n;k++){
+   total++;
+   const ang=rnd()*6.28,dist=n>1?(0.02+rnd()*0.035):0;
+   const lo=lon+Math.cos(ang)*dist*1.4,la=lat+Math.sin(ang)*dist;
+   const [x,y]=P([lo,la]);
+   const id='C'+String(total).padStart(2,'0');
+   const short=city.replace(/[^A-Za-zÀ-ÿ]/g,'').slice(0,3).toUpperCase();
+   const c={id,name:`Terrain ${city}${n>1?' '+k:''}`,city,reg,x,y,rst:pick(FIRST)+' '+pick(LAST),sup:pick(FIRST)+' '+pick(LAST),ppub:pick(FIRST)+' '+pick(LAST),sj:pick(SJ),eqs:[]};
+   const ne=2+Math.floor(rnd()*3);const used=new Set();
+   for(let j=0;j<ne;j++){let t;do{t=pick(EQT)}while(used.has(t[0]));used.add(t[0]);
+    const e={id:`EQ-${short}${k}-${t[1]}${j+1}`,type:t[0],centre:id,st:'ok',hist:[],photo:null};
+    const r=rnd();
+    const lastCtl=Math.floor(10+rnd()*120);
+    e.hist.push({d:daysAgo(lastCtl),k:'ctl',w:'Contrôle visuel RST',s:'RAS',c:'var(--ok-f)'});
+    if(r<0.012){e.st='bad';e.hist.push({d:daysAgo(2+Math.floor(rnd()*5)),k:'inc',w:'Incident signalé : Danger',s:'Équipement condamné en attendant intervention',c:'var(--bad)'});}
+    else if(r<0.06){e.st='warn';e.hist.push({d:daysAgo(1+Math.floor(rnd()*9)),k:'inc',w:'Incident signalé',s:pick(['Fixation instable','Filet déchiré','Sol décollé','Arête vive']),c:'var(--warn-f)'});}
+    else if(r<0.085){e.st='blue';e.hist.push({d:daysAgo(9),k:'inc',w:'Incident signalé',s:'Usure anormale',c:'var(--warn-f)'});e.hist.push({d:daysAgo(2),k:'int',w:'Intervention enregistrée',s:pick(PRESTA),c:'var(--blue-f)'});}
+    else if(r<0.11){e.st='grey';e.hist=[{d:daysAgo(160+Math.floor(rnd()*60)),k:'ctl',w:'Contrôle visuel RST',s:'RAS',c:'var(--ok-f)'}];}
+    if(rnd()<0.08&&e.st!=='grey'){e.hist.unshift({d:daysAgo(150+Math.floor(rnd()*150)),k:'int',w:'Intervention précédente',s:pick(PRESTA),c:'var(--blue-f)'});}
+    e.hist.sort((a,b)=>a.d-b.d);
+    c.eqs.push(e.id);eqs.push(e);}
+   centres.push(c);
+  }});
+ // héros du scénario : Lyon 3, but de football
+ const hero=centres.find(c=>c.name==='Terrain Lyon 3');
+ hero.rst='Karim B.';hero.sup='Léa M.';hero.ppub='Nadia R.';hero.sj='Convention avec la ville';
+ let he=eqs.find(e=>e.centre===hero.id&&e.type==='But de football');
+ if(!he){he=eqs.find(e=>e.id===hero.eqs[0]);he.type='But de football';}
+ const oldId=he.id;he.id='EQ-LYO3-BF1';hero.eqs[hero.eqs.indexOf(oldId)]=he.id;
+ he.st='ok';he.hist=[
+  {d:daysAgo(240),k:'inc',w:'Incident signalé',s:'Barre transversale fissurée',c:'var(--warn-f)'},
+  {d:daysAgo(232),k:'int',w:'Intervention : soudure',s:'Prestataire A (fictif)',c:'var(--blue-f)'},
+  {d:daysAgo(230),k:'val',w:'Validé par le RST',s:'Photo après jointe',c:'var(--ok-f)'},
+  {d:daysAgo(62),k:'ctl',w:'Contrôle visuel V2',s:'RAS',c:'var(--ok-f)'}];
+ // le centre du RST : quelques équipements connus
+ window.HERO={c:hero.id,e:he.id};
+ // file d'incidents initiale
+ incidents=[];let n=405;
+ eqs.filter(e=>e.st==='bad'||e.st==='warn'||e.st==='blue').forEach(e=>{
+  const last=[...e.hist].reverse().find(h=>h.k==='inc');
+  incidents.push({id:'INC-2026-'+(n++),eq:e.id,st:e.st,d:last?last.d:daysAgo(3),txt:last?last.s:'',urg:e.st==='bad'?'Danger':'À traiter',taken:e.st==='blue'||rnd()<.6});
+ });
+ // un incident non pris en charge, escaladé
+ const esc1=incidents.find(i=>i.st==='warn');if(esc1){esc1.taken=false;esc1.d=new Date(NOW-52*36e5);esc1.esc=true;}
+}
+let incidents=[];
+const C=id=>centres.find(c=>c.id===id),E=id=>eqs.find(e=>e.id===id);
+const worst=list=>list.reduce((a,s)=>ST[s].rank>ST[a].rank?s:a,'ok');
+const cState=c=>worst(c.eqs.map(id=>E(id).st));
+const recid=e=>e.hist.filter(h=>h.k==='int'&&h.d>daysAgo(365)).length>=2;
+
+/* ============ état ============ */
+const S={role:'dir',view:'map',theme:'light',filter:{reg:'all',st:'all',q:''},kpi:null,zoom:{lvl:'fr',reg:null},selC:null,phoneOpen:false,
+ phone:{net:false,scr:'home',draft:null,queue:[],verify:[],done:null},sort:{k:'st',d:-1},
+ sc:{step:1}};
+
+/* ============ carte ============ */
+const FR=[[2.55,51.08],[1.85,50.95],[1.6,50.7],[1.55,50.2],[1.4,50.05],[1.08,49.93],[0.37,49.76],[0.1,49.5],[0.2,49.42],[-0.3,49.33],[-1.1,49.38],[-1.25,49.7],[-1.6,49.65],[-1.85,49.7],[-1.6,49.2],[-1.5,48.75],[-1.5,48.63],[-2.0,48.65],[-2.7,48.55],[-3.0,48.8],[-3.6,48.7],[-4.3,48.65],[-4.77,48.5],[-4.5,48.38],[-4.6,48.1],[-4.35,48.0],[-4.7,48.0],[-4.35,47.8],[-3.9,47.85],[-3.4,47.7],[-2.9,47.55],[-2.5,47.5],[-2.2,47.27],[-2.0,47.0],[-2.15,46.85],[-1.8,46.5],[-1.2,46.15],[-1.1,45.85],[-1.2,45.6],[-1.05,45.4],[-1.25,44.6],[-1.35,44.0],[-1.55,43.45],[-1.78,43.37],[-1.4,43.05],[-0.7,42.9],[0.0,42.7],[0.7,42.85],[1.45,42.6],[2.0,42.4],[3.17,42.43],[3.05,42.9],[3.25,43.25],[3.9,43.5],[4.4,43.45],[4.85,43.35],[5.35,43.3],[5.9,43.1],[6.6,43.15],[7.0,43.55],[7.4,43.75],[7.5,43.8],[7.7,44.15],[6.9,44.4],[7.05,44.85],[6.65,45.1],[7.1,45.3],[6.8,45.85],[7.0,46.0],[6.8,46.4],[6.1,46.2],[6.1,46.6],[6.45,46.95],[7.0,47.45],[7.55,47.6],[7.6,48.1],[7.8,48.6],[8.2,48.97],[7.4,49.17],[6.75,49.17],[6.4,49.47],[5.8,49.55],[5.4,49.6],[4.85,49.8],[4.85,50.15],[4.2,50.0],[4.1,50.3],[3.7,50.3],[3.3,50.5],[2.85,50.72]];
+const CO=[[9.4,43.0],[9.55,42.6],[9.5,42.1],[9.25,41.4],[8.8,41.6],[8.6,42.0],[8.7,42.6],[9.3,42.7]];
+const PRJ=([lon,lat])=>[22+(lon+5.2)*66*0.69,18+(51.4-lat)*66];
+const pth=a=>'M'+a.map(p=>PRJ(p).map(v=>v.toFixed(1)).join(',')).join('L')+'Z';
+const VB0=[0,0,700,640];let vb=[...VB0],vbAnim=null;
+function setVB(t,ms=650){const from=[...vb];const t0=performance.now();cancelAnimationFrame(vbAnim);
+ const ease=x=>1-Math.pow(1-x,3);
+ const f=now=>{const k=Math.min(1,(now-t0)/ms);vb=from.map((v,i)=>v+(t[i]-v)*ease(k));drawPins();if(k<1)vbAnim=requestAnimationFrame(f)};vbAnim=requestAnimationFrame(f);}
+function bboxOf(list,pad=40){const xs=list.map(c=>c.x),ys=list.map(c=>c.y);let x0=Math.min(...xs)-pad,x1=Math.max(...xs)+pad,y0=Math.min(...ys)-pad,y1=Math.max(...ys)+pad;
+ const ar=700/640;let w=x1-x0,h=y1-y0;if(w/h<ar){const nw=h*ar;x0-=(nw-w)/2;w=nw}else{const nh=w/ar;y0-=(nh-h)/2;h=nh}return [x0,y0,w,h]}
+function visibleCentres(){const f=S.filter;return centres.filter(c=>(f.reg==='all'||c.reg===f.reg)&&(f.q===''||(c.name+' '+c.city+' '+c.eqs.join(' ')).toLowerCase().includes(f.q.toLowerCase()))&&matchSt(c))}
+function matchSt(c){const k=S.kpi||S.filter.st;if(k==='all'||!k)return true;
+ if(k==='rec')return c.eqs.some(id=>recid(E(id)));
+ if(k==='esc')return incidents.some(i=>i.esc&&E(i.eq).centre===c.id);
+ return c.eqs.some(id=>E(id).st===k)}
+function initMap(){const svg=$('#map');svg.innerHTML=`<defs><filter id="sh" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="4" stdDeviation="7" flood-color="#18182a" flood-opacity=".12"/></filter></defs>
+ <g id="landG"><path class="land" d="${pth(FR)}" filter="url(#sh)"/><path class="land" d="${pth(CO)}"/></g><g id="pins"></g>`;}
+function clusterize(list,s){const thr=40*s;let cl=[];
+ list.forEach(c=>{let best=null,bd=1e9;cl.forEach(g=>{const d=Math.hypot(g.x-c.x,g.y-c.y);if(d<thr&&d<bd){bd=d;best=g}});
+  if(best){best.m.push(c);best.x=best.m.reduce((a,o)=>a+o.x,0)/best.m.length;best.y=best.m.reduce((a,o)=>a+o.y,0)/best.m.length}else cl.push({x:c.x,y:c.y,m:[c]})});
+ let merged=true;while(merged){merged=false;for(let i=0;i<cl.length&&!merged;i++)for(let j=i+1;j<cl.length;j++){const a=cl[i],b=cl[j];const ra=(13+Math.sqrt(a.m.length)*3.2+6)*s,rb=(13+Math.sqrt(b.m.length)*3.2+6)*s;if(Math.hypot(a.x-b.x,a.y-b.y)<ra+rb){a.m.push(...b.m);a.x=a.m.reduce((q,o)=>q+o.x,0)/a.m.length;a.y=a.m.reduce((q,o)=>q+o.y,0)/a.m.length;cl.splice(j,1);merged=true;break}}}
+ return cl.map(g=>g.m)}
+function drawPins(){
+ const svg=$('#map');svg.setAttribute('viewBox',vb.join(' '));
+ const r=svg.getBoundingClientRect();const scale=vb[2]/(r.width||700)*(Math.max(1,(r.width||700)/700*640/(r.height||640)));
+ const s=vb[2]/700; // zoom factor
+ const list=visibleCentres();
+ const zoomed=s<0.5;
+ const groups=clusterize(list,s*(zoomed?0.35:1));
+ let h='';
+ groups.forEach(gp=>{
+  const x=gp.reduce((a,c)=>a+c.x,0)/gp.length,y=gp.reduce((a,c)=>a+c.y,0)/gp.length;
+  if(gp.length===1){const c=gp[0];const st=cState(c);const R=7.5*s*1.25;const sel=S.selC===c.id;
+   h+=`<g class="pin" data-c="${c.id}" transform="translate(${x},${y})">
+    <circle class="halo" r="${R*2.4}" fill="${ST[st].f}"/>
+    ${st==='bad'?`<circle r="${R*1.6}" fill="none" stroke="${ST.bad.f}" stroke-width="${1.5*s}" opacity=".6"><animate attributeName="r" values="${R};${R*2.6}" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".7;0" dur="1.6s" repeatCount="indefinite"/></circle>`:''}
+    <circle r="${R+2.5*s}" fill="var(--surface)" ${sel?`stroke="var(--accent)" stroke-width="${3*s}"`:''}/>
+    <circle r="${R}" fill="${ST[st].f}"/>
+    ${zoomed?`<text class="mlabel" y="${-R-6*s}" text-anchor="middle" font-size="${11*s}">${esc(c.name.replace('Terrain ',''))}</text>`:''}
+   </g>`;}
+  else{const cnt={ok:0,grey:0,blue:0,warn:0,bad:0};gp.forEach(c=>cnt[cState(c)]++);
+   const R=(13+Math.sqrt(gp.length)*3.2)*s;const circ=2*Math.PI*R;let off=0;let arcs='';
+   ['bad','warn','blue','grey','ok'].forEach(k=>{if(!cnt[k])return;const len=cnt[k]/gp.length*circ;arcs+=`<circle r="${R}" fill="none" stroke="${ST[k].f}" stroke-width="${6*s}" stroke-dasharray="${len} ${circ-len}" stroke-dashoffset="${-off}" transform="rotate(-90)"/>`;off+=len});
+   h+=`<g class="pin" data-g="${gp.map(c=>c.id).join(',')}" transform="translate(${x},${y})">
+    <circle class="halo" r="${R*1.5}" fill="var(--accent)"/>
+    <circle r="${R+4*s}" fill="var(--surface)"/>${arcs}
+    <text text-anchor="middle" y="${5*s}" font-size="${14*s}" font-weight="780" fill="var(--strong)" class="num">${gp.length}</text>
+    ${cnt.bad?`<circle cx="${R*.78}" cy="${-R*.78}" r="${6.5*s}" fill="var(--bad)" stroke="var(--surface)" stroke-width="${2*s}"/><text x="${R*.78}" y="${-R*.78+3.6*s}" text-anchor="middle" font-size="${9*s}" font-weight="800" fill="#fff">${cnt.bad}</text>`:''}
+   </g>`;}
+ });
+ $('#pins').innerHTML=h;
+ $('#mapCount').textContent=list.length+' terrains';
+}
+function mapEvents(){
+ const svg=$('#map'),tip=$('#tip'),box=$('#mapbox');
+ svg.addEventListener('click',e=>{const g=e.target.closest('.pin');if(!g)return;
+  if(g.dataset.c){openCentre(g.dataset.c);return}
+  const ids=g.dataset.g.split(',');const list=ids.map(C);
+  const regs=[...new Set(list.map(c=>c.reg))];if(S.zoom.lvl==='fr'&&regs.length===1){S.zoom={lvl:'reg',reg:regs[0]};}
+  setVB(bboxOf(list,list.length>3?26:40));renderCrumbs();});
+ svg.addEventListener('mousemove',e=>{const g=e.target.closest('.pin');if(!g){tip.style.opacity=0;return}
+  const b=box.getBoundingClientRect();tip.style.left=(e.clientX-b.left)+'px';tip.style.top=(e.clientY-b.top)+'px';tip.style.opacity=1;
+  if(g.dataset.c){const c=C(g.dataset.c);const st=cState(c);const n=c.eqs.filter(id=>E(id).st!=='ok').length;tip.innerHTML=`<b>${esc(c.name)}</b><br>${ST[st].l}${n?`, ${n} équipement${n>1?'s':''} concerné${n>1?'s':''}`:''}`}
+  else{const n=g.dataset.g.split(',').length;tip.innerHTML=`<b>${n} terrains</b><br>Cliquer pour zoomer`}});
+ svg.addEventListener('mouseleave',()=>tip.style.opacity=0);
+ svg.addEventListener('wheel',e=>{e.preventDefault();const k=e.deltaY>0?1.18:0.85;zoomBy(k,e)},{passive:false});
+ let drag=null;svg.addEventListener('pointerdown',e=>{if(e.target.closest('.pin'))return;drag={x:e.clientX,y:e.clientY,vb:[...vb]};svg.setPointerCapture(e.pointerId);svg.style.cursor='grabbing'});
+ svg.addEventListener('pointermove',e=>{if(!drag)return;const r=svg.getBoundingClientRect();const f=vb[2]/r.width*Math.max(1,(r.width/r.height)/(700/640));vb=[drag.vb[0]-(e.clientX-drag.x)*f,drag.vb[1]-(e.clientY-drag.y)*f,vb[2],vb[3]];drawPins()});
+ svg.addEventListener('pointerup',()=>{drag=null;svg.style.cursor='grab'});
+ $('#zin').onclick=()=>zoomBy(.7);$('#zout').onclick=()=>zoomBy(1.4);$('#zhome').onclick=()=>goFrance();
+}
+function zoomBy(k,e){let cx=vb[0]+vb[2]/2,cy=vb[1]+vb[3]/2;
+ if(e){const r=$('#map').getBoundingClientRect();cx=vb[0]+(e.clientX-r.left)/r.width*vb[2];cy=vb[1]+(e.clientY-r.top)/r.height*vb[3];}
+ let w=Math.min(700,Math.max(40,vb[2]*k));const h=w*640/700;setVB([cx-(cx-vb[0])*w/vb[2],cy-(cy-vb[1])*h/vb[3],w,h],e?120:350);}
+function goFrance(){S.zoom={lvl:'fr',reg:null};S.selC=null;setVB(VB0);renderCrumbs();renderSide();}
+
+/* ============ rendu ============ */
+function renderCrumbs(){
+ const z=S.zoom;let h=`<span style="opacity:.4">/</span><button data-z="fr" class="${z.lvl==='fr'&&!S.selC?'cur':''}">France</button>`;
+ const reg=S.selC?C(S.selC).reg:z.reg;
+ if(reg)h+=`${I.chev}<button data-z="reg" class="${!S.selC?'cur':''}">${REG[reg]}</button>`;
+ if(S.selC)h+=`${I.chev}<button class="cur">${esc(C(S.selC).name)}</button>`;
+ $('#crumbs').innerHTML=h;
+ $('#crumbs').querySelectorAll('button[data-z]').forEach(b=>b.onclick=()=>{if(b.dataset.z==='fr')goFrance();else{S.selC=null;S.zoom={lvl:'reg',reg};setVB(bboxOf(centres.filter(c=>c.reg===reg)));renderCrumbs();renderSide();drawPins()}});
+}
+function counts(){const c={ok:0,grey:0,blue:0,warn:0,bad:0};eqs.forEach(e=>c[e.st]++);return c}
+function renderKpis(){
+ const c=counts();const rec=eqs.filter(recid).length;const escN=incidents.filter(i=>i.esc&&!i.taken).length;
+ const K=[['bad','Danger',c.bad,'équipements condamnés','var(--bad)'],['warn','Incidents ouverts',c.warn,`dont ${escN} non pris en charge`,'var(--warn-f)'],['blue','Réparés, à vérifier',c.blue,'en attente du RST','var(--blue-f)'],['grey','Sans info récente',c.grey,'aucun contrôle depuis 5 mois','var(--grey-f)'],['rec','Alertes récidive (V2)',rec,'2 interventions ou plus en 12 mois','var(--accent)']];
+ $('#kpis').innerHTML=K.map(([k,l,v,s,col])=>`<button class="card kpi ${S.kpi===k?'sel':''}" data-k="${k}"><div class="k-top"><span class="dot" style="background:${col}"></span>${l}</div><div class="v num">${v}</div><div class="c">${s}</div></button>`).join('');
+ $('#kpis').querySelectorAll('.kpi').forEach(b=>b.onclick=()=>{S.kpi=S.kpi===b.dataset.k?null:b.dataset.k;S.filter.st='all';refresh()});
+}
+function renderChips(){
+ const f=S.filter;
+ let h=`<button class="chip ${f.reg==='all'?'on':''}" data-r="all">Toutes les régions</button>`+Object.entries(REG).map(([k,v])=>`<button class="chip ${f.reg===k?'on':''}" data-r="${k}">${k==='PACA'?'PACA':k==='ARA'?'Auvergne-Rhône-Alpes':v}</button>`).join('');
+ h+=`<label class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Terrain, commune, ID équipement" value="${esc(f.q)}"></label>`;
+ $('#chips').innerHTML=h;
+ $('#chips').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{f.reg=b.dataset.r;if(f.reg==='all')goFrance();else{S.zoom={lvl:'reg',reg:f.reg};S.selC=null;setVB(bboxOf(centres.filter(c=>c.reg===f.reg)))}refresh()});
+ $('#q').oninput=e=>{f.q=e.target.value;drawPins();renderTable();}
+}
+function renderLegend(){
+ $('#legend').innerHTML=['bad','warn','blue','ok','grey'].map(k=>`<div><span class="dot" style="background:${ST[k].f}"></span>${ST[k].l}${k==='grey'?' <span class="tag" style="padding:0 5px">proposé</span>':''}</div>`).join('')+`<small>Le terrain prend la couleur de son équipement le plus critique. Vert = vérifié, pas « certifié sûr ».</small>`;
+}
+function renderTable(){
+ const rows=[];visibleCentres().forEach(c=>c.eqs.forEach(id=>{const e=E(id);if(S.kpi&&S.kpi!=='rec'&&S.kpi!=='esc'&&e.st!==S.kpi)return;if(S.kpi==='rec'&&!recid(e))return;const last=e.hist[e.hist.length-1];rows.push({c,e,name:c.name,eq:e.type,st:ST[e.st].rank,last:last.d,rst:c.rst,sj:c.sj})}));
+ const {k,d}=S.sort;rows.sort((a,b)=>(a[k]>b[k]?1:a[k]<b[k]?-1:0)*d);
+ $('#tbody').innerHTML=rows.slice(0,250).map(r=>`<tr data-e="${r.e.id}"><td><b>${esc(r.name)}</b><div style="font-size:11.5px;color:var(--muted)">${REG[r.c.reg]}</div></td><td>${esc(r.e.type)}<div style="font-size:11.5px;color:var(--muted)" class="num">${r.e.id}</div></td><td>${badge(r.e.st)} ${recid(r.e)?'<span class="tag rec">Récidive</span>':''}</td><td class="num">${fmtD(r.last)}<div style="font-size:11.5px;color:var(--muted)">${esc(r.e.hist[r.e.hist.length-1].w)}</div></td><td>${esc(r.rst)}</td><td style="font-size:12px;color:var(--muted)">${esc(r.sj)}</td></tr>`).join('')||`<tr><td colspan="6" class="empty">Aucun équipement pour ces filtres.</td></tr>`;
+ $('#tbody').querySelectorAll('tr[data-e]').forEach(t=>t.onclick=()=>openCarnet(t.dataset.e));
+}
+function incRow(i,fresh){const e=E(i.eq),c=C(e.centre);const h=Math.round((NOW-i.d)/36e5);
+ const age=h<48?(h<1?'à l\'instant':`il y a ${h} h`):`il y a ${Math.round(h/24)} j`;
+ return `<button class="row ${fresh?'new':''}" data-e="${e.id}"><div class="ic ${ST[e.st].c}">${ST[e.st].i.replace('<svg','<svg width="17" height="17"')}</div>
+  <div style="min-width:0"><div class="t">${esc(e.type)}, ${esc(c.name)}</div><div class="m">${esc(i.txt||ST[e.st].l)}, ${age}</div>
+  <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">${i.esc&&!i.taken?`<span class="tag esc">V2 : relancé au PPUB ${esc(c.ppub)}</span>`:''}${recid(e)?'<span class="tag rec">Récidive</span>':''}${i.offline?'<span class="tag">Saisi hors ligne</span>':''}</div></div>
+  <div class="r">${badge(e.st)}<span class="m" style="font-size:11.5px">${i.taken?'Pris en charge':'<b style="color:var(--warn)">À prendre</b>'}</span></div></button>`.replace(' · ',', ')}
+function renderSide(freshId){
+ const side=$('#side');
+ if(S.selC){const c=C(S.selC);const st=cState(c);const bad=c.eqs.filter(id=>E(id).st!=='ok').length;
+  side.innerHTML=`<div class="card">
+   <div class="cp-h"><div style="display:flex;align-items:center;gap:8px"><div class="eyebrow">${REG[c.reg]}</div><div class="sp"></div><button class="x" id="closeC">${I.x}</button></div><h3>${esc(c.name)}</h3>
+   <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${badge(st)}<span class="tag">${c.eqs.length} équipements, ${bad} à suivre</span></div></div>
+   <div class="meta"><div>RST<b>${esc(c.rst)}</b></div><div>Suppléant<b>${esc(c.sup)}</b></div><div>Situation juridique<b>${esc(c.sj)}</b></div><div>Qui répare<b>${esc(SJwho[c.sj])}</b></div></div>
+   <div class="sec-h" style="padding-top:4px"><h2>Équipements</h2></div>
+   <div class="list">${c.eqs.map(id=>{const e=E(id);const last=e.hist[e.hist.length-1];return `<button class="row" data-e="${id}"><div class="ic ${ST[e.st].c}">${ST[e.st].i.replace('<svg','<svg width="17" height="17"')}</div><div><div class="t">${esc(e.type)}</div><div class="m num">${id}, ${esc(last.w.toLowerCase())} le ${fmtD(last.d)}</div>${recid(e)?'<span class="tag rec" style="margin-top:5px">Récidive</span>':''}</div><div class="r">${badge(e.st)}<span class="m" style="font-size:11.5px">Carnet ${I.chev}</span></div></button>`}).join('')}</div></div>`;
+  $('#closeC').onclick=()=>{S.selC=null;renderSide();renderCrumbs();drawPins()};
+ } else {
+  const open=incidents.filter(i=>['warn','bad','blue'].includes(E(i.eq).st)).filter(i=>{const c=C(E(i.eq).centre);return S.filter.reg==='all'||c.reg===S.filter.reg})
+   .sort((a,b)=>(b.fresh?1:0)-(a.fresh?1:0)||ST[E(b.eq).st].rank-ST[E(a.eq).st].rank||(a.taken?1:0)-(b.taken?1:0)||b.d-a.d);
+  side.innerHTML=`<div class="card"><div class="sec-h"><h2>File des incidents</h2><span class="count num">${open.length}</span><div class="sp"></div><span style="font-size:11.5px;color:var(--muted)">Tri par règles : urgence, ancienneté</span></div>
+   <div class="list" id="incList">${open.map(i=>incRow(i,i.id===freshId)).join('')||'<div class="empty">Aucun incident ouvert</div>'}</div>
+   <div style="padding:0 18px 16px;font-size:11.5px;color:var(--muted)">V2 : sans prise en charge sous 48 h, relance au PPUB de la région, puis à la direction des territoires (délai à valider).</div></div>`;
+ }
+ side.querySelectorAll('.row[data-e]').forEach(b=>b.onclick=()=>openCarnet(b.dataset.e));
+}
+function openCentre(id){S.selC=id;const c=C(id);S.zoom={lvl:'reg',reg:c.reg};
+ const near=centres.filter(o=>Math.hypot(o.x-c.x,o.y-c.y)<14);setVB(bboxOf(near.length>1?near:[c],near.length>1?12:20));
+ renderCrumbs();renderSide();drawPins();}
+function refresh(fresh){renderKpis();renderChips();renderLegend();drawPins();renderTable();renderSide(fresh);renderCrumbs();renderSteps();
+ $('#freshTxt').textContent='Dernière info synchronisée : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+
+/* ============ carnet de santé ============ */
+function qrSvg(id){let s=0;for(const ch of id)s=(s*31+ch.charCodeAt(0))%9973;let h='';
+ for(let y=0;y<21;y++)for(let x=0;x<21;x++){const fin=(x<7&&y<7)||(x>13&&y<7)||(x<7&&y>13);let on;
+  if(fin){const lx=x>13?x-14:x,ly=y>13?y-14:y;on=lx===0||ly===0||lx===6||ly===6||(lx>1&&lx<5&&ly>1&&ly<5)}else{s=(s*1103+12345)%32768;on=s%2===0}
+  h+=on?'<i></i>':'<b></b>'}return `<div class="qr">${h}</div>`}
+function photoSvg(kind){ // illustration générique d'un but
+ const crack=kind==='before';return `<svg viewBox="0 0 200 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g${kind}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${crack?'#9fb6cf':'#a9c8e6'}"/><stop offset="1" stop-color="${crack?'#d9e1ea':'#e3eef8'}"/></linearGradient></defs>
+ <rect width="200" height="150" fill="url(#g${kind})"/><rect y="104" width="200" height="46" fill="${crack?'#4f8a57':'#57a35f'}"/><path d="M0 112h200" stroke="#fff" stroke-width="1.5" opacity=".6"/>
+ <path d="M40 106V44h120v62" fill="none" stroke="#f4f4f4" stroke-width="7" stroke-linejoin="round"/><path d="M44 48h112v56H44z" fill="none" stroke="#fff" stroke-width=".8" opacity=".5"/>
+ ${[...Array(9)].map((_,i)=>`<path d="M${50+i*12} 48v56" stroke="#fff" stroke-width=".6" opacity=".45"/>`).join('')}
+ ${crack?'<path d="M96 40l4 6-3 3 5 5" fill="none" stroke="#c0392b" stroke-width="2.4"/><circle cx="100" cy="46" r="13" fill="none" stroke="#ff3b30" stroke-width="2.5" stroke-dasharray="5 3"/>':'<path d="M90 41h20" stroke="#bfc6cc" stroke-width="7"/>'}
+ </svg>`}
+function openCarnet(eid){
+ const e=E(eid),c=C(e.centre);const inc=incidents.filter(i=>i.eq===eid).slice(-1)[0];
+ const ints=e.hist.filter(h=>h.k==='int');const isRec=recid(e);
+ const canInt=['warn','bad'].includes(e.st);const canVer=e.st==='blue';
+ openModal(`<div class="m-h"><div class="m-ic ${ST[e.st].c}">${ST[e.st].i.replace('<svg','<svg width="22" height="22"')}</div>
+  <div style="min-width:0"><div class="eyebrow">Carnet de santé, ${esc(c.name)}</div><h3>${esc(e.type)}</h3><div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${badge(e.st)}<span class="tag num">${e.id}</span>${isRec?'<span class="tag rec">Alerte récidive (V2)</span>':''}</div></div>
+  <button class="x" data-close>${I.x}</button></div>
+  <div class="m-b"><div class="grid2"><div style="display:flex;flex-direction:column;gap:14px">
+   ${isRec?`<div class="alert bad"><div>${I.bad.replace('<svg','<svg width="18" height="18"')}</div><div><b>V2 : ${ints.length} interventions en 12 mois sur cet équipement</b>${ints.map(h=>`${fmtD(h.d)} : ${esc(h.s)}`).join(', ')}. Faire jouer la garantie ou changer de prestataire ?</div></div>`:''}
+   ${e.st==='blue'?`<div class="alert info"><div>${I.blue.replace('<svg','<svg width="18" height="18"')}</div><div><b>En attente de vérification par le RST</b>Demande envoyée à ${esc(c.rst)} dans Teams. L'incident n'est clos qu'après son OK.</div></div>`:''}
+   ${e.photo?`<div class="box"><h4>Photos</h4><div class="photos"><div class="ph">${photoSvg('before')}<span>Avant, ${fmtD(e.photo.d)}</span></div>${e.photo.after?`<div class="ph">${photoSvg('after')}<span>Après, vérifié</span></div>`:''}</div></div>`:''}
+   <div class="box"><h4>Historique complet</h4><div class="tl">${[...e.hist].reverse().map(h=>`<div class="tli" style="--c:${h.c}"><div class="d num">${fmtDT(h.d).replace(' 00:00','')}</div><div class="w">${esc(h.w)}</div><div class="s">${esc(h.s)}</div></div>`).join('')}</div></div>
+  </div><div style="display:flex;flex-direction:column;gap:14px">
+   <div class="box" style="display:flex;gap:14px;align-items:center">${qrSvg(e.id)}<div style="font-size:12.5px;color:var(--muted)"><b style="color:var(--text);display:block">QR code collé sur l'équipement</b>Le scanner ouvre ce carnet et le formulaire pré-rempli.</div></div>
+   <div class="box"><h4>Responsabilités</h4><div style="display:grid;gap:8px;font-size:13px">
+    <div style="display:flex"><span style="color:var(--muted)">RST</span><span class="sp"></span><b>${esc(c.rst)}</b></div>
+    <div style="display:flex"><span style="color:var(--muted)">Suppléant</span><span class="sp"></span><b>${esc(c.sup)}</b></div>
+    <div style="display:flex"><span style="color:var(--muted)">PPUB (relance)</span><span class="sp"></span><b>${esc(c.ppub)}</b></div>
+    <div style="display:flex"><span style="color:var(--muted)">Situation juridique</span><span class="sp"></span><b>${esc(c.sj)}</b></div>
+    <div style="display:flex"><span style="color:var(--muted)">Qui répare</span><span class="sp"></span><b>${esc(SJwho[c.sj])}</b></div></div></div>
+   ${inc&&['warn','bad','blue'].includes(e.st)?`<div class="box"><h4>Incident en cours</h4><div style="font-size:13px"><b class="num">${inc.id}</b><div style="color:var(--muted)">${esc(inc.txt)}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><span class="tag">Urgence : ${esc(inc.urg)}</span>${inc.offline?'<span class="tag">Saisi hors ligne</span>':''}</div></div></div>`:''}
+  </div></div></div>
+  <div class="m-f"><span class="info">Lecture pour tous. Modification selon le rôle.</span>
+   ${canInt?`<button class="btn pri" id="doInt">Enregistrer l'intervention</button>`:''}
+   ${canVer?`<button class="btn sec" id="doVer">Voir la demande côté RST</button>`:''}
+   <button class="btn sec" data-close>Fermer</button></div>`);
+ if(canInt)$('#doInt').onclick=()=>openIntervention(eid);
+ if(canVer)$('#doVer').onclick=()=>{closeModal();openPhone();S.phone.scr='home';renderPhone();}
+}
+function openIntervention(eid){
+ const e=E(eid),c=C(e.centre);const d={presta:SJwho[c.sj].startsWith('Ville')?'Services techniques de la ville':'Prestataire A (fictif)',type:SJwho[c.sj].startsWith('Ville')?'Ville':'Association',date:'2026-11-19'};
+ const draw=()=>{openModal(`<div class="m-h"><div class="m-ic s-blue">${I.blue.replace('<svg','<svg width="22" height="22"')}</div><div><div class="eyebrow">${esc(e.type)}, ${esc(c.name)}</div><h3>Enregistrer l'intervention</h3></div><button class="x" data-close>${I.x}</button></div>
+  <div class="m-b">
+   <div class="fld"><label>Prestataire</label><div class="opts">${PRESTA.map(p=>`<button class="opt ${d.presta===p?'on':''}" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div></div>
+   <div class="fld"><label>Date d'intervention</label><input class="inp" type="date" value="${d.date}" id="idate"></div>
+   <div class="fld"><label>Prise en charge</label><div class="opts">${['Association','Ville','Garantie prestataire'].map(p=>`<button class="opt ${d.type===p?'on':''}" data-t="${p}">${p}</button>`).join('')}</div><span style="font-size:11.5px;color:var(--muted)">Proposé selon la situation juridique : ${esc(c.sj)}.</span></div>
+   ${e.hist.filter(h=>h.k==='int'&&h.d>daysAgo(365)).length>=1?`<div class="alert warn"><div>${I.warn.replace('<svg','<svg width="18" height="18"')}</div><div><b>Ce sera la 2e intervention en 12 mois</b>L'alerte récidive s'affichera sur le carnet de santé.</div></div>`:''}
+  </div>
+  <div class="m-f"><span class="info">L'équipement passe à « Réparé, à vérifier ». Le RST reçoit une demande dans Teams.</span><button class="btn sec" data-close>Annuler</button><button class="btn pri" id="saveInt">Marquer réparé, à vérifier</button></div>`,true);
+  $('#modal').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{d.presta=b.dataset.p;draw()});
+  $('#modal').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{d.type=b.dataset.t;draw()});
+  $('#saveInt').onclick=()=>{
+   e.st='blue';e.hist.push({d:new Date(),k:'int',w:'Intervention enregistrée',s:`${d.presta}, prise en charge ${d.type.toLowerCase()}`,c:'var(--blue-f)'});
+   const inc=incidents.filter(i=>i.eq===eid).slice(-1)[0];if(inc){inc.taken=true;inc.st='blue'}
+   S.phone.verify.push({eid,t:new Date()});
+   closeModal();refresh();
+   toast('teams','Teams, conversation avec '+c.rst,`<b>Demande de vérification</b><br>${esc(e.type)}, ${esc(c.name)} : réparé par ${esc(d.presta)}. Merci de vérifier sur place.`,[['Ouvrir','phone']]);
+   if(S.phoneOpen)phoneToast('Teams',`Vérification demandée : ${e.type}, ${c.name}`);
+   if(recid(e))setTimeout(()=>toast('sys','Parc SDLV, alerte récidive',`<b>${esc(e.type)}, ${esc(c.name)}</b><br>2 interventions en 12 mois. Garantie ou changement de prestataire à étudier.`,[['Voir le carnet','carnet:'+eid]]),900);
+   if(eid===HERO.e)S.sc.step=Math.max(S.sc.step,5);renderSteps();renderPhone();
+  };};draw();
+}
+
+/* ============ modale / toasts ============ */
+function openModal(html,sm){const m=$('#modal');m.className='modal'+(sm?' sm':'');m.innerHTML=html;$('#ov').classList.add('show');m.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeModal)}
+function closeModal(){$('#ov').classList.remove('show')}
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openSearch()}});
+function toast(kind,head,body,actions=[]){const t=document.createElement('div');t.className='toast';
+ t.innerHTML=`<div class="th ${kind}">${kind==='teams'?I.teams:kind==='mail'?I.mail:I.user}${esc(head)}<span class="sp"></span><button data-x style="color:#fff;opacity:.8">${I.x}</button></div><div class="tb">${body}</div>${actions.length?`<div class="tf">${actions.map(([l,a])=>`<button class="btn sec" style="height:30px;font-size:12.5px" data-a="${a}">${l}</button>`).join('')}</div>`:''}`;
+ $('#toasts').appendChild(t);while($('#toasts').children.length>3)$('#toasts').firstElementChild.remove();
+ t.querySelector('[data-x]').onclick=()=>t.remove();
+ t.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const a=b.dataset.a;t.remove();if(a==='phone'){openPhone()}else if(a.startsWith('carnet:'))openCarnet(a.slice(7));else if(a.startsWith('centre:'))openCentre(a.slice(7))});
+ setTimeout(()=>t.remove(),7000);}
+function openSearch(){
+ openModal(`<div class="cmd"><input id="sq" placeholder="Rechercher un terrain, une commune, un ID d'équipement…" autofocus><div class="res" id="sres"></div></div>`,true);$('#modal').style.width='min(620px,calc(100vw - 32px))';
+ const run=()=>{const q=$('#sq').value.toLowerCase();const res=[];
+  centres.forEach(c=>{if((c.name+c.city).toLowerCase().includes(q))res.push(`<button class="row" data-c="${c.id}"><div class="ic ${ST[cState(c)].c}">${ST[cState(c)].i.replace('<svg','<svg width="17" height="17"')}</div><div><div class="t">${esc(c.name)}</div><div class="m">${REG[c.reg]}, ${c.eqs.length} équipements</div></div></button>`)});
+  eqs.forEach(e=>{if(q.length>1&&(e.id+e.type).toLowerCase().includes(q))res.push(`<button class="row" data-e="${e.id}"><div class="ic ${ST[e.st].c}">${ST[e.st].i.replace('<svg','<svg width="17" height="17"')}</div><div><div class="t">${esc(e.type)}</div><div class="m num">${e.id}, ${esc(C(e.centre).name)}</div></div></button>`)});
+  $('#sres').innerHTML=res.slice(0,30).join('')||'<div class="empty">Rien trouvé</div>';
+  $('#sres').querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{closeModal();openCentre(b.dataset.c)});
+  $('#sres').querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>openCarnet(b.dataset.e));};
+ $('#sq').oninput=run;run();setTimeout(()=>$('#sq').focus(),50);
+}
+function openArch(){openModal(`<div class="m-h"><div class="m-ic" style="background:var(--accent-soft);color:var(--accent)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></div><div><div class="eyebrow">Sous le capot</div><h3>Tout reste dans Microsoft 365</h3></div><button class="x" data-close>${I.x}</button></div>
+ <div class="m-b"><div class="arch">
+  <div class="box"><b>Power Apps Mobile</b>Scan QR, 3 champs, photo, urgence. Saisie gardée sur le téléphone (SaveData / LoadData) et envoyée au retour du réseau.<br><span class="pill-std">Standard</span></div>
+  <div class="box"><b>SharePoint Lists</b>Centres, Équipements, Incidents, Interventions, Validations. Photos dans une bibliothèque. Paramètres administrés par Luce.<br><span class="pill-std">Standard</span></div>
+  <div class="box"><b>Power Automate</b>Fiche dans le canal Teams de la région, mail si Danger, relance au PPUB à 48 h, demande de vérification au RST, alerte récidive.<br><span class="pill-std">Standard</span></div>
+  <div class="box"><b>Teams</b>Le directeur et les RST reçoivent les fiches là où ils travaillent déjà, avec un lien direct vers le carnet.<br><span class="pill-std">Inclus</span></div>
+  <div class="box"><b>Carte de France (V2)</b>Version standard : carte dessinée + points placés par formule. Ce prototype en est l'intention.<br><span class="pill-std">Standard</span></div>
+  <div class="box"><b>Carte Azure Maps</b>Contrôle Map natif de Power Apps : fond réel, zoom, regroupement.<br><span class="pill-pr">Premium, à chiffrer</span></div>
+  <div class="box"><b>Dataverse</b>Hors ligne natif plus robuste, si la synchronisation SharePoint s'avère trop fragile.<br><span class="pill-pr">Premium, à comparer</span></div>
+  <div class="box"><b>Entra ID</b>Comptes de l'association. Droits distincts : lecture, signalement, intervention, validation, administration.<br><span class="pill-std">Inclus</span></div>
+ </div>
+ <h4 style="margin:18px 0 8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Notifications : un canal par usage</h4>
+ <table style="font-size:12.5px"><thead><tr><th>Événement</th><th>Qui</th><th>Canal</th></tr></thead><tbody style="cursor:default">
+  <tr><td>Nouvel incident</td><td>Canal Teams de la région, directeur</td><td><b>Teams</b> (fiche avec lien vers le carnet)</td></tr>
+  <tr><td>Urgence Danger</td><td>Directeur + suppléant</td><td><b>Teams + mail</b> immédiat</td></tr>
+  <tr><td>Réparé, à vérifier</td><td>RST du terrain</td><td><b>Teams</b> (conversation)</td></tr>
+  <tr><td>Vérif OK / KO</td><td>Directeur</td><td><b>Teams</b></td></tr>
+  <tr><td>Non pris en charge 48 h (V2)</td><td>PPUB, puis direction des territoires</td><td><b>Teams</b>, puis mail</td></tr>
+  <tr><td>Saisie en attente, envoi échoué</td><td>RST</td><td><b>Dans l'app</b> (file d'envoi), pas de push</td></tr>
+ </tbody></table>
+ <h4 style="margin:18px 0 8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Où est l'IA</h4>
+ <div class="arch" style="grid-template-columns:repeat(3,1fr)">
+  <div class="box"><b>Oui : pour construire</b>Générer écrans, formules, flux, jeux de test et documentation. Faire évoluer l'app en langage naturel, relu par un humain.</div>
+  <div class="box"><b>Oui : pour gouverner</b>Documenter l'app, expliquer un flux à Luce, vérifier les droits, préparer les évolutions. Aucune dépendance en production.</div>
+  <div class="box"><b>Avec mesure : au quotidien</b>Le tri des incidents repose sur des règles lisibles (urgence, ancienneté, récidive). Une suggestion IA éventuelle reste une aide, jamais une décision.</div>
+ </div>
+ <div class="flowline"><span>Scan QR</span>${I.chev}<span>Saisie hors ligne</span>${I.chev}<span>Liste SharePoint</span>${I.chev}<span>Teams + mail</span>${I.chev}<span>Intervention</span>${I.chev}<span>Réparé, à vérifier</span>${I.chev}<span>OK du RST</span>${I.chev}<span>Carnet à jour</span></div>
+ <p style="margin-top:14px;font-size:12px;color:var(--muted)">Prototype navigable avec données fictives. Il montre l'expérience visée : il ne prouve ni la faisabilité du composant carte dans Power Apps, ni le hors ligne réel, à tester sur téléphone.</p></div>
+ <div class="m-f"><span class="info"></span><button class="btn pri" data-close>Compris</button></div>`)}
+
+/* ============ téléphone RST ============ */
+function openPhone(){S.phoneOpen=true;document.body.classList.add('phone-open');$('#btnPhone').classList.add('on');renderPhone()}
+function closePhone(){S.phoneOpen=false;document.body.classList.remove('phone-open');$('#btnPhone').classList.remove('on')}
+function phoneToast(app,msg){const t=$('#scr .ptoast');if(!t)return;t.innerHTML=`<div style="width:34px;height:34px;border-radius:9px;background:#5b5fc7;display:grid;place-items:center;flex:none">${I.teams}</div><div style="font-size:12.5px"><b style="color:#18181b">${app}</b><div style="color:#4a4a52">${esc(msg)}</div></div>`;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3800)}
+const rstCentre=()=>C(HERO.c);
+function renderPhone(){
+ const P=S.phone;const c=rstCentre();
+ const sbar=`<div class="sbar"><span class="num">${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span><button class="net ${P.net?'on':'off'}" id="net" title="Basculer le réseau">${P.net?I.wifi+' 4G':I.plane+' Hors réseau'}</button></div><div class="ptoast"></div>`;
+ let body='';
+ if(P.scr==='home'){
+  const pending=P.queue.filter(q=>q.st!=='ok');
+  body=`<div class="app-h"><div class="hi">Bonjour ${esc(c.rst.split(' ')[0])}</div><div class="big">Mes terrains</div></div>
+  <div class="app-b">
+   ${!P.net?`<div class="pc" style="background:#fff7ec;display:flex;gap:10px;align-items:center"><span style="color:#b45700">${I.plane}</span><div class="m" style="color:#7a4a10">Pas de réseau. Vos saisies restent sur le téléphone et partiront toutes seules.</div></div>`:''}
+   <button class="scanbtn" id="pScan">${I.qr}<div><div class="t">Scanner un QR code</div><div class="m">Signaler ou vérifier un équipement</div></div></button>
+   ${P.verify.length?`<div class="pl">À vérifier (${P.verify.length})</div>`+P.verify.map((v,ix)=>{const e=E(v.eid);return `<button class="pc" style="text-align:left;border:1.5px solid #2f80ed" data-v="${ix}"><div style="display:flex;align-items:center;gap:8px"><span class="qst q-send">Réparé, à vérifier</span><span class="sp"></span>${I.chev}</div><div class="t" style="margin-top:6px">${esc(e.type)}</div><div class="m">${esc(C(e.centre).name)}, demandé dans Teams</div></button>`}).join(''):''}
+   ${P.queue.length?`<div class="pl">Mes envois</div>`+P.queue.slice().reverse().map(q=>{const e=E(q.eid);return `<div class="pc qitem"><div style="flex:1;min-width:0"><div class="t">${esc(e.type)}</div><div class="m">${esc(q.cat)}, saisi à ${q.t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div></div><span class="qst ${q.st==='wait'?'q-wait':q.st==='send'?'q-send':'q-ok'}">${q.st==='wait'?'En attente réseau':q.st==='send'?'<span class="spin"></span> Envoi':'Envoyé'}</span></div>`}).join(''):''}
+   ${pending.length&&P.net?'':''}
+   <div class="pl">${esc(c.name)}</div>
+   ${c.eqs.map(id=>{const e=E(id);return `<div class="pc" style="display:flex;align-items:center;gap:10px"><span class="dot" style="background:${ST[e.st].f};width:12px;height:12px"></span><div style="flex:1"><div class="t" style="font-size:13.5px">${esc(e.type)}</div><div class="m">${ST[e.st].l}</div></div></div>`}).join('')}
+  </div>`;
+ } else if(P.scr==='scan'){
+  body=`<div class="app-h"><button class="back" id="pBack">${I.back}Retour</button><div class="big">Scanner</div></div>
+  <div class="viewfinder"><div class="vf-box"><div class="vf-line"></div></div><div style="position:absolute;bottom:14px;color:#fff;font-size:12px;opacity:.8">Visez le QR code collé sur l'équipement</div></div>
+  <div class="app-b" style="padding-top:12px"><div class="pl">Simuler le scan</div>
+   ${c.eqs.map(id=>{const e=E(id);return `<button class="pc" style="text-align:left;display:flex;align-items:center;gap:10px" data-scan="${id}"><span class="dot" style="background:${ST[e.st].f}"></span><div style="flex:1"><div class="t" style="font-size:13.5px">${esc(e.type)}</div><div class="m num">${id}</div></div>${I.chev}</button>`}).join('')}</div>`;
+ } else if(P.scr==='form'){
+  const d=P.draft,e=E(d.eid);const ok=d.type&&d.cat&&d.txt.trim().length>2&&d.urg;
+  body=`<div class="app-h"><button class="back" id="pBack">${I.back}Annuler</button><div class="big">Signaler</div><div class="hi" style="margin-top:2px">${esc(e.type)}, ${esc(c.name)} <span style="color:#00843c">(rempli par le QR)</span></div></div>
+  <div class="app-b">
+   <div><div class="pl" style="margin:0 0 6px">1. Type</div><div class="pchips">${['Casse','Instabilité','Usure','Vandalisme'].map(t=>`<button class="${d.type===t?'on':''}" data-type="${t}">${t}</button>`).join('')}</div></div>
+   <div><div class="pl" style="margin:0 0 6px">2. Catégorie</div><div class="pchips">${['Structure','Fixation','Filet','Sol','Autre'].map(t=>`<button class="${d.cat===t?'on':''}" data-cat="${t}">${t}</button>`).join('')}</div></div>
+   <div><div class="pl" style="margin:0 0 6px">3. Constat</div><textarea class="ptxt" id="ptxt" placeholder="Ce que je vois, en une phrase">${esc(d.txt)}</textarea></div>
+   <button class="photo-slot" id="pPhoto" style="${d.photo?'border:0;padding:0':''}">${d.photo?photoSvg('before'):I.cam+' Prendre une photo'}</button>
+   <div><div class="pl" style="margin:0 0 6px">Urgence</div><div class="urg">${[['Faible','u1'],['À traiter','u2'],['Danger','u3']].map(([t,k])=>`<button class="${k} ${d.urg===t?'on':''}" data-urg="${t}">${t}</button>`).join('')}</div></div>
+   <button class="pbtn pri" id="pSend" ${ok?'':'disabled'}>${P.net?'Envoyer':'Enregistrer sur le téléphone'}</button>
+   ${!P.net?'<div class="m" style="text-align:center;font-size:11.5px;color:#686872">Hors réseau : envoi automatique au retour de la 4G</div>':''}
+  </div>`;
+ } else if(P.scr==='saved'){
+  body=`<div class="app-b" style="justify-content:center;align-items:center;text-align:center;gap:14px">
+   <div style="width:76px;height:76px;border-radius:50%;background:${P.net?'#e6f6ee':'#fff2e3'};display:grid;place-items:center;color:${P.net?'#00843c':'#b45700'}">${P.net?I.ok.replace('<svg','<svg width="38" height="38"'):I.plane.replace('width="13" height="13"','width="34" height="34"')}</div>
+   <div class="big" style="font-size:20px;font-weight:800">${P.net?'Signalement envoyé':'Enregistré sur le téléphone'}</div>
+   <div class="m" style="max-width:250px;color:#686872;font-size:13px">${P.net?'Le directeur et le canal Teams de la région sont prévenus.':'Il partira automatiquement dès que le réseau revient. Rien ne sera perdu, même si vous fermez l\'app.'}</div>
+   <button class="pbtn pri" style="width:100%;margin-top:10px" id="pHome">Retour à l'accueil</button></div>`;
+ } else if(P.scr==='verify'){
+  const v=P.cur,e=E(v.eid);
+  body=`<div class="app-h"><button class="back" id="pBack">${I.back}Retour</button><div class="big">Vérifier</div><div class="hi">${esc(e.type)}, ${esc(c.name)}</div></div>
+  <div class="app-b">
+   <div class="pc"><div class="pl" style="margin:0 0 8px">Photo de départ</div><div style="border-radius:12px;overflow:hidden;height:120px">${photoSvg('before')}</div><div class="m" style="margin-top:8px">${esc((e.hist.filter(h=>h.k==='int').slice(-1)[0]||{}).s||'')}</div></div>
+   <div class="pl">Photo après réparation</div>
+   <button class="photo-slot" id="pAfter" style="${v.after?'border:0;padding:0':''}">${v.after?photoSvg('after'):I.cam+' Prendre la photo « après »'}</button>
+   <div class="pl">L'équipement est-il de nouveau sûr ?</div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="pbtn ko" id="pKO">KO, rouvrir</button><button class="pbtn ok" id="pOK" ${v.after?'':'disabled'}>OK, validé</button></div>
+  </div>`;
+ } else if(P.scr==='verified'){
+  const ok=P.lastOk;
+  body=`<div class="app-b" style="justify-content:center;align-items:center;text-align:center;gap:14px">
+   <div style="width:76px;height:76px;border-radius:50%;background:${ok?'#e6f6ee':'#fdecee'};display:grid;place-items:center;color:${ok?'#00843c':'#d62231'}">${(ok?I.ok:I.warn).replace('<svg','<svg width="38" height="38"')}</div>
+   <div class="big" style="font-size:20px;font-weight:800">${ok?'Validé par le RST':'Incident rouvert'}</div>
+   <div class="m" style="max-width:250px;color:#686872;font-size:13px">${ok?'Le directeur est prévenu. L\'équipement repasse au vert, la photo « après » est dans le carnet.':'Le directeur est prévenu et doit relancer une intervention.'}</div>
+   <button class="pbtn pri" style="width:100%;margin-top:10px" id="pHome">Retour à l'accueil</button></div>`;
+ }
+ $('#scr').innerHTML=sbar+body+'<div class="home-ind"></div>';
+ const on=(id,f)=>{const el=$('#scr').querySelector(id);if(el)el.onclick=f};
+ on('#net',()=>{P.net=!P.net;renderPhone();if(P.net)syncQueue()});
+ on('#pScan',()=>{P.scr='scan';renderPhone();S.sc.step=Math.max(S.sc.step,1);renderSteps()});
+ on('#pBack',()=>{P.scr='home';renderPhone()});
+ on('#pHome',()=>{P.scr='home';renderPhone()});
+ $('#scr').querySelectorAll('[data-scan]').forEach(b=>b.onclick=()=>{const eid=b.dataset.scan;const vi=P.verify.findIndex(v=>v.eid===eid);
+  if(vi>-1){P.cur={...P.verify[vi],ix:vi};P.scr='verify';}else{P.draft={eid,type:null,cat:null,txt:'',photo:false,urg:null};P.scr='form';if(eid===HERO.e)S.sc.step=Math.max(S.sc.step,2);}
+  renderPhone();renderSteps()});
+ $('#scr').querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{P.cur={...P.verify[+b.dataset.v],ix:+b.dataset.v};P.scr='verify';renderPhone()});
+ if(P.scr==='form'){const d=P.draft;
+  $('#scr').querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{d.type=b.dataset.type;renderPhone()});
+  $('#scr').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{d.cat=b.dataset.cat;renderPhone()});
+  $('#scr').querySelectorAll('[data-urg]').forEach(b=>b.onclick=()=>{d.urg=b.dataset.urg;renderPhone()});
+  $('#ptxt').oninput=ev=>{d.txt=ev.target.value;const ok=d.type&&d.cat&&d.txt.trim().length>2&&d.urg;$('#pSend').disabled=!ok};
+  on('#pPhoto',()=>{d.photo=true;renderPhone()});
+  on('#pSend',()=>{P.queue.push({id:'SDV-'+Math.random().toString(16).slice(2,6).toUpperCase(),eid:d.eid,cat:`${d.type}, ${d.cat}`,txt:d.txt,urg:d.urg,photo:d.photo,t:new Date(),st:'wait',offline:!P.net});
+   P.scr='saved';renderPhone();if(P.net)syncQueue();});
+ }
+ if(P.scr==='verify'){on('#pAfter',()=>{P.cur.after=true;renderPhone()});
+  on('#pOK',()=>verifyDone(true));on('#pKO',()=>verifyDone(false));}
+}
+function syncQueue(){
+ const P=S.phone;const todo=P.queue.filter(q=>q.st==='wait');if(!todo.length)return;
+ todo.forEach(q=>q.st='send');renderPhone();
+ setTimeout(()=>{todo.forEach(q=>{q.st='ok';receive(q)});renderPhone();},1400);
+}
+function receive(q){
+ const e=E(q.eid),c=C(e.centre);
+ e.st=q.urg==='Danger'?'bad':'warn';
+ e.photo={d:q.t};
+ e.hist.push({d:q.t,k:'inc',w:`Incident signalé${q.urg==='Danger'?' : Danger':''}`,s:`${q.cat}. « ${q.txt} »${q.offline?' (saisi hors ligne, reçu à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+')':''}`,c:q.urg==='Danger'?'var(--bad)':'var(--warn-f)'});
+ const inc={id:'INC-2026-'+(500+incidents.length),eq:e.id,st:e.st,d:new Date(),txt:`${q.cat} : ${q.txt}`,urg:q.urg,taken:false,offline:q.offline,fresh:true};
+ incidents.forEach(i=>i.fresh=false);incidents.push(inc);
+ refresh(inc.id);
+ toast('teams','Teams, canal Infra '+REG[c.reg],`<b>Nouvel incident ${inc.id}</b><br>${esc(e.type)}, ${esc(c.name)}<br><span style="color:var(--muted)">${esc(q.cat)}, urgence ${esc(q.urg)}. Par ${esc(c.rst)}${q.offline?', saisi hors ligne':''}.</span>`,[['Ouvrir le carnet','carnet:'+e.id],['Voir le terrain','centre:'+c.id]]);
+ if(q.urg==='Danger')setTimeout(()=>toast('mail','Mail au directeur des infrastructures',`<b>Danger signalé</b> : ${esc(e.type)}, ${esc(c.name)}. L'équipement passe en rouge.`),700);
+ if(e.id===HERO.e)S.sc.step=Math.max(S.sc.step,4);renderSteps();
+ if(!S.selC){}
+}
+function verifyDone(ok){
+ const P=S.phone,v=P.cur,e=E(v.eid),c=C(e.centre);
+ P.verify.splice(v.ix,1);P.lastOk=ok;P.scr='verified';
+ if(ok){e.st='ok';e.photo=e.photo||{d:new Date()};e.photo.after=true;e.hist.push({d:new Date(),k:'val',w:'Validé par le RST',s:`${c.rst}, photo « après » jointe`,c:'var(--ok-f)'});}
+ else{e.st='warn';e.hist.push({d:new Date(),k:'inc',w:'Vérification KO : incident rouvert',s:c.rst,c:'var(--warn-f)'});const inc=incidents.filter(i=>i.eq===e.id).slice(-1)[0];if(inc){inc.taken=false;inc.st='warn'}}
+ renderPhone();refresh();
+ toast('teams','Teams, '+c.rst,ok?`<b>Validé sur place</b><br>${esc(e.type)}, ${esc(c.name)} est de nouveau au vert.`:`<b>Vérification KO</b><br>${esc(e.type)}, ${esc(c.name)} : incident rouvert.`,[['Voir le carnet','carnet:'+e.id]]);
+ if(e.id===HERO.e&&ok)S.sc.step=6;renderSteps();
+}
+
+/* ============ scénario guidé ============ */
+const STEPS=[
+ ['Scanner le QR','Ouvrez le <b>téléphone RST</b> et touchez « Scanner un QR code », puis le but de football.'],
+ ['3 champs + photo, hors réseau','Remplissez type, catégorie, constat, photo et urgence, puis <b>Enregistrer sur le téléphone</b>.'],
+ ['Retour réseau','Touchez le badge <b>Hors réseau</b> en haut du téléphone : l\'envoi part tout seul, Teams prévient le directeur.'],
+ ['Enregistrer l\'intervention','Côté directeur, ouvrez le carnet du but (toast Teams ou file) puis <b>Enregistrer l\'intervention</b>.'],
+ ['Vérification RST','Sur le téléphone, ouvrez la demande « À vérifier », prenez la photo après puis <b>OK, validé</b>.'],
+ ['Carnet de santé à jour','Ouvrez le carnet : historique, photos avant/après, et, en V2, l’<b>alerte récidive</b>.'],
+];
+function curStep(){const P=S.phone,he=E(HERO.e);
+ if(he.st==='ok'&&he.hist.some(h=>h.k==='val'&&h.d>daysAgo(1)))return 6;
+ if(he.st==='blue')return 5;
+ if(['warn','bad'].includes(he.st)&&he.hist.some(h=>h.k==='inc'&&h.d>daysAgo(1)))return 4;
+ if(P.queue.some(q=>q.eid===HERO.e&&q.st!=='ok'))return 3;
+ if(P.scr==='form'&&P.draft&&P.draft.eid===HERO.e)return 2;
+ return 1}
+function renderSteps(){const cur=curStep();
+ $('#steps').innerHTML=`<span class="lab">Scénario du PRD</span>`+STEPS.map(([t],i)=>{const n=i+1;const cls=n<cur||(n===6&&cur===6&&E(HERO.e).st==='ok'&&false)?'done':n===cur?'cur':'';return `<button class="step ${cls}" data-s="${n}"><i>${n<cur?'✓':n}</i>${t}</button>`}).join('')+`<span class="hint">${STEPS[cur-1][1]}</span>`;
+ $('#steps').querySelectorAll('.step').forEach(b=>b.onclick=()=>guide(+b.dataset.s));}
+function flash(el){if(!el)return;el.classList.remove('pulse-ring');void el.offsetWidth;el.classList.add('pulse-ring');el.scrollIntoView({block:'nearest',behavior:'smooth'})}
+function guide(n){n=n||curStep();
+ if(n<=3){openPhone();if(n===1){S.phone.scr='home';S.phone.net=false;renderPhone();flash($('#pScan'))}
+  if(n===2){if(S.phone.scr!=='form'){S.phone.draft={eid:HERO.e,type:null,cat:null,txt:'',photo:false,urg:null};S.phone.scr='form';S.phone.net=false;renderPhone()}flash($('#scr .pchips button'))}
+  if(n===3){S.phone.scr='home';renderPhone();flash($('#net'))}}
+ if(n===4){openCentre(HERO.c);setTimeout(()=>openCarnet(HERO.e),500)}
+ if(n===5){openPhone();S.phone.scr='home';renderPhone();flash($('#scr [data-v]'))}
+ if(n===6){openCarnet(HERO.e)}
+ renderSteps();}
+
+/* ============ boot ============ */
+const PERS={rst:['RST','Karim B. (fictif)','Signale depuis le terrain, vérifie après réparation.','phone'],dir:['Directeur national des infrastructures','Profil de démo','Voit tout le parc, enregistre les interventions.','desk'],ppub:['Responsable partenariats publics (PPUB)','Nadia R. (fictif)','Suit sa région, prend le relais si personne ne prend l\'incident.','desk'],ref:['Référente de l\'association','Profil de démo','Administre les listes, les droits et les paramètres.','desk']};
+function pickPersona(first){openModal(`<div class="m-h"><div class="m-ic" style="background:var(--accent-soft);color:var(--accent)">${I.user.replace('width="15" height="15"','width="22" height="22"')}</div><div><div class="eyebrow">Pas de connexion en v1</div><h3>Qui êtes-vous pour cette démo ?</h3></div>${first?'':`<button class="x" data-close>${I.x}</button>`}</div>
+ <div class="m-b"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${Object.entries(PERS).map(([k,[r,n,d]])=>`<button class="box" data-p="${k}" style="text-align:left;border:1.5px solid ${S.role===k?'var(--accent)':'transparent'};transition:var(--motion)"><b style="display:block;color:var(--strong);font-size:14px">${r}</b><span style="font-size:12px;color:var(--muted)">${n}</span><div style="font-size:12.5px;margin-top:6px">${d}</div></button>`).join('')}</div>
+ <p style="margin-top:12px;font-size:12px;color:var(--muted)">Aucune donnée réelle : terrains, personnes et incidents sont fictifs.</p></div>`,true);
+ $('#modal').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.role=b.dataset.p;renderRole();closeModal();if(PERS[S.role][3]==='phone')openPhone();else if(S.role==='ref')openArch();else if(S.role==='ppub'){S.filter.reg='ARA';S.zoom={lvl:'reg',reg:'ARA'};setVB(bboxOf(centres.filter(c=>c.reg==='ARA')));refresh()}})}
+function renderRole(){const R={rst:'RST',dir:'Directeur infra',ppub:'PPUB',ref:'Référente'};$('#btnRole').innerHTML=I.user+'<span class="hide-sm">'+R[S.role]+'</span>'}
+$('#btnRole').onclick=()=>pickPersona(false);
+$('#btnTheme').onclick=()=>{S.theme=S.theme==='light'?'dark':'light';document.documentElement.dataset.theme=S.theme;$('#btnTheme').innerHTML=S.theme==='light'?I.moon:I.sun;drawPins()};
+$('#btnPhone').onclick=()=>S.phoneOpen?closePhone():openPhone();
+$('#closePhone').onclick=closePhone;
+$('#btnSearch').onclick=openSearch;$('#btnArch').onclick=openArch;
+$('#btnGuide').onclick=()=>guide();
+$('#btnReset').onclick=()=>{build();S.phone={net:false,scr:'home',draft:null,queue:[],verify:[],done:null};S.kpi=null;S.filter={reg:'all',st:'all',q:''};goFrance();refresh();renderPhone();closeModal();$('#toasts').innerHTML=''};
+$('#viewSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;$('#viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));$('#mapView').style.display=S.view==='map'?'':'none';$('#listView').style.display=S.view==='list'?'':'none'});
+document.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const k=th.dataset.s;S.sort={k,d:S.sort.k===k?-S.sort.d:1};renderTable()});
+window.addEventListener('resize',drawPins);
+build();initMap();mapEvents();renderRole();$('#btnTheme').innerHTML=I.moon;refresh();renderPhone();if(!location.hash.includes('nopick'))pickPersona(true);
+</script>
+</body></html>

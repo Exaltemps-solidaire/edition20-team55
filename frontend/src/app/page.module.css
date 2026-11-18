@@ -1,0 +1,64 @@
+.wrap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.panel {
+  width: 100%;
+  max-width: 480px;
+  padding: 28px;
+}
+
+.panel h1 {
+  font-size: 22px;
+  font-weight: 780;
+  color: var(--strong);
+  letter-spacing: -0.01em;
+}
+
+.sub {
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.liste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.persona {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-weight: 700;
+}
+
+.nom {
+  font-weight: 620;
+  color: var(--strong);
+  font-size: 13.5px;
+}
+
+.role {
+  color: var(--muted);
+  font-size: 12px;
+}

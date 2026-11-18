@@ -1,0 +1,76 @@
+# Plan d'itérations — Sport dans la Ville (équipe 7XQ8UV)
+
+**Plan validé le 2026-11-18.**
+
+- **Source du plan** : proposé par l'agent (aucun plan d'itérations de l'équipe trouvé dans la passation : pas de fichier `cadrage/*iteration*`, pas de clé `iterations` dans `passation.json`).
+- **Temps restant annoncé** : 120 minutes (question posée le 2026-11-18).
+- **Durée d'un tour de test PM Lab** : 10 minutes (valeur par défaut, le développeur ne savait pas).
+- **Capacité estimée** : une itération coûte au moins codage (≤10 min) + publication (~5 min) + tour de test (10 min) ≈ 25 min. 120 min ⇒ **4 à 5 itérations** tiennent, selon la durée réelle de codage de chacune.
+- **Ce qui sort du périmètre** (conforme au PRD, `cadrage/7-prd.md`) : suivi des jeunes (Digisport), contrôles externes des bureaux de contrôle, gestion des prestataires (contrats/garanties), vue cartographique (carte de France), alerte récidive, relance automatique PPUB/direction, connexion/comptes (remplacés par un sélecteur de persona).
+- ✂️ **Point de coupe supplémentaire proposé par l'agent** : le « carnet de santé » (hypothèse 3) ne sera pas un écran dédié séparé construit d'un bloc. Il émergera des itérations du flux principal : la fiche équipement affichera sa pastille d'état et son historique en réutilisant les incidents/interventions déjà créés, plutôt qu'un écran construit à part. Si le temps restant le permet en fin de programme, une itération courte peaufinera cet écran.
+- ⚠️ **Traduction technique** : la solution décrite s'appuie sur Microsoft 365 (Power Apps, SharePoint, Teams, Power Automate). Cette machine n'impose aucune pile : le besoin métier est repris en web classique — QR code → page web d'équipement, notifications in-app au lieu de Teams, liste au lieu de SharePoint. Aucune fonctionnalité n'est perdue dans cette traduction, mais ce n'est pas ce que montrera littéralement le prototype PRD.
+
+---
+
+## Itération 1 : Choisir son rôle et voir l'écran principal, application déployée
+
+> Temps restant annoncé au début de cette itération : ~115 minutes (2026-11-18). Largement suffisant pour codage (≤10 min) + publication (~5 min) + tour de test (10 min).
+
+- **Dans le périmètre** :
+  - écran « Qui êtes-vous ? » au lancement : liste d'une personne par rôle du scénario (RST, directeur national des infrastructures), avec un bouton pour changer de rôle à tout moment ;
+  - écran principal après choix du rôle : liste des équipements/terrains d'exemple (données en dur), vide d'incidents ;
+  - squelette conforme au contrat de déployabilité : `.env.example`, `DEPLOIEMENT.md`, routes `/health` (front, port 8080) et `/sante` répondant 200.
+- **Hors périmètre** : tout signalement, tout scan de QR code, toute donnée réelle de l'association.
+- **Critères d'acceptation** :
+  - Étant donné l'application démarrée, quand on arrive sur `/`, alors l'écran « Qui êtes-vous ? » propose au moins un persona RST et un persona directeur.
+  - Étant donné un persona choisi, quand on valide, alors on arrive sur l'écran principal, qui liste des équipements d'exemple, et un bouton permet de changer de rôle.
+  - Étant donné l'application déployée, quand on appelle `/health` et `/sante`, alors les deux répondent 200 avec un corps non vide.
+- **Hypothèse de l'équipe couverte** : aucune — itération de squelette, aucune n'est testable sans flux de signalement.
+- **Codage estimé** : 10 minutes
+- **Fichiers prévus** : page/route d'accueil (persona picker), écran principal (liste équipements), état du persona choisi (contexte/store), `.env.example`, `DEPLOIEMENT.md`
+- **Tests unitaires prévus** : aucun — pas de logique métier au-delà de l'affichage et d'une sélection triviale dans cette itération.
+- **Étapes ajoutées à la démo** : ouvrir l'app, choisir le persona RST, voir l'écran principal.
+- **Bilan** : _à remplir en fin d'itération._
+
+## Itération 2 : Le RST signale un incident depuis la fiche d'un équipement
+
+- **Dans le périmètre** :
+  - une fiche équipement accessible depuis l'écran principal (le lien simule le scan du QR code — pas de lecture caméra réelle) ;
+  - formulaire de signalement : 3 champs (type, catégorie, constat), photo, niveau d'urgence (Normale / Forte / Danger) ;
+  - l'incident envoyé apparaît dans la liste avec date, auteur (le persona courant), photo, statut « Nouveau » ; un incident « Danger » fait passer l'équipement en rouge dans la liste.
+- **Hors périmètre** : lecture caméra réelle d'un QR code, mode hors ligne, notifications au directeur.
+- **Critères d'acceptation** :
+  - Étant donné un RST sur la fiche d'un équipement, quand il remplit les 3 champs, une photo et une urgence, puis envoie, alors un incident « Nouveau » apparaît dans la liste avec sa date et son auteur.
+  - Étant donné un champ obligatoire vide, quand il tente d'envoyer, alors le formulaire refuse l'envoi et dit pourquoi.
+  - Étant donné un incident créé avec l'urgence « Danger », quand la liste se rafraîchit, alors l'équipement correspondant apparaît en rouge.
+- **Hypothèse de l'équipe couverte** : « Nous croyons que le RST peut signaler un incident depuis le terrain en moins de 3 actions et moins de 30 secondes via le QR code » — démontrée qualitativement (le parcours fiche → formulaire → envoi), sans mesure automatique de temps.
+- **Codage estimé** : 10 minutes
+- **Fichiers prévus** : page fiche équipement, formulaire de signalement, route API de création d'incident, modèle incident/équipement, mise à jour de la liste équipements
+- **Tests unitaires prévus** : 2 — validation des champs obligatoires du formulaire ; règle « urgence Danger ⇒ équipement rouge ».
+- **Étapes ajoutées à la démo** : depuis l'écran principal, ouvrir un équipement, signaler un incident « Danger », vérifier qu'il apparaît en rouge dans la liste.
+- **Bilan** : _à remplir en fin d'itération._
+
+## Itération 3 : Le signalement fonctionne sans réseau
+
+- **Dans le périmètre** :
+  - si l'envoi échoue faute de réseau, le signalement reste en local (file d'attente) avec un statut visible « en attente d'envoi » ;
+  - au retour du réseau, l'envoi repart automatiquement, sans action du RST.
+- **Hors périmètre** : déduplication avancée, compression ou gestion fine des photos volumineuses hors ligne.
+- **Critères d'acceptation** :
+  - Étant donné le navigateur hors ligne, quand le RST envoie un signalement, alors il reste visible avec un statut « en attente d'envoi ».
+  - Étant donné le retour en ligne, quand l'évènement survient, alors le signalement part automatiquement et passe au statut « Nouveau ».
+  - Étant donné 2 signalements mis en attente hors ligne, quand le réseau revient, alors les deux sont transmis, sans perte.
+- **Hypothèse de l'équipe couverte** : « Nous croyons que le mode hors ligne permet au RST de saisir un incident sans réseau et de l'envoyer automatiquement au retour du réseau ; […] aucun incident saisi hors ligne n'est perdu lors du test en mode avion. »
+- **Codage estimé** : 10 minutes
+- **Fichiers prévus** : file d'attente locale (stockage navigateur), écouteur d'évènement réseau, affichage du statut « en attente »
+- **Tests unitaires prévus** : 2 — ajout à la file quand l'envoi échoue ; purge de la file et passage à « Nouveau » après envoi réussi.
+- **Étapes ajoutées à la démo** : couper le réseau, signaler un incident, montrer le statut « en attente », remettre le réseau, montrer l'envoi automatique.
+- **Bilan** : _à remplir en fin d'itération._
+
+---
+
+## À venir (détaillées au fil de l'eau, selon le temps restant)
+
+1. Notification du directeur national des infrastructures dès qu'un incident arrive, et enregistrement de l'intervention (prestataire, date, type de prise en charge), avec passage de l'équipement à « Réparé, à vérifier ».
+2. Validation RST sur place : il revoit la photo de départ, répond OK/KO avec une photo « après » ; OK valide l'incident, KO le rouvre. La fiche équipement affiche à cette occasion sa pastille d'état et l'historique des incidents/interventions (carnet de santé minimal, hypothèse 3).
+3. Si le temps le permet : champ libre « situation juridique du terrain » sur la fiche équipement (saisi à la main, jamais déduit), et stabilisation finale pour le pitch.
