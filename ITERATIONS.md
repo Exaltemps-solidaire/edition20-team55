@@ -3,6 +3,7 @@
 **Plan validé le 2026-11-18.**
 
 - **Source du plan** : proposé par l'agent (aucun plan d'itérations de l'équipe trouvé dans la passation : pas de fichier `cadrage/*iteration*`, pas de clé `iterations` dans `passation.json`).
+- **Référence de spécification** : `ressources/build-spec.md` (vocabulaire du modèle de données, états/transitions, règles d'attribution et de notification, parcours à tester) et `ressources/index.html` (charte visuelle, jetons repris dans `frontend/src/app/globals.css`) — voir l'entrée du 2026-11-18 dans `adr.md`. Le séquencement et le budget de codage restent ceux de ce fichier, pas ceux de la section 11 du build-spec.
 - **Temps restant annoncé** : 120 minutes (question posée le 2026-11-18).
 - **Durée d'un tour de test PM Lab** : 10 minutes (valeur par défaut, le développeur ne savait pas).
 - **Capacité estimée** : une itération coûte au moins codage (≤10 min) + publication (~5 min) + tour de test (10 min) ≈ 25 min. 120 min ⇒ **4 à 5 itérations** tiennent, selon la durée réelle de codage de chacune.
