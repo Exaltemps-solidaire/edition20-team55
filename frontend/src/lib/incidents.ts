@@ -1,4 +1,7 @@
 // Logique métier du signalement d'incident (itération 2). Pas de backend : persistance en localStorage, par équipement.
+import { attribuer, type CodeRegle } from "./regles";
+import { EQUIPEMENTS, type Equipement } from "./equipements";
+
 export type Urgence = "normale" | "forte" | "danger";
 
 export type Incident = {
@@ -12,6 +15,8 @@ export type Incident = {
   auteur: string;
   date: string;
   statut: "nouveau" | "en_attente";
+  attribueA: string;
+  regleAppliquee: CodeRegle;
 };
 
 export type SaisieIncident = {
@@ -48,10 +53,11 @@ export function chargerIncidents(equipementId: string): Incident[] {
   return brut ? (JSON.parse(brut) as Incident[]) : [];
 }
 
-export function ajouterIncident(equipementId: string, saisie: SaisieIncident, auteur: string, enLigne: boolean): Incident {
+export function ajouterIncident(equipement: Equipement, saisie: SaisieIncident, auteur: string, enLigne: boolean): Incident {
+  const { attribueA, regleAppliquee } = attribuer({ categorie: saisie.categorie, urgence: saisie.urgence as Urgence }, equipement);
   const incident: Incident = {
     id: `INC-${Date.now()}`,
-    equipementId,
+    equipementId: equipement.id,
     type: saisie.type,
     categorie: saisie.categorie,
     constat: saisie.constat,
@@ -60,9 +66,11 @@ export function ajouterIncident(equipementId: string, saisie: SaisieIncident, au
     auteur,
     date: new Date().toISOString(),
     statut: enLigne ? "nouveau" : "en_attente",
+    attribueA,
+    regleAppliquee,
   };
-  const incidents = [incident, ...chargerIncidents(equipementId)];
-  window.localStorage.setItem(cle(equipementId), JSON.stringify(incidents));
+  const incidents = [incident, ...chargerIncidents(equipement.id)];
+  window.localStorage.setItem(cle(equipement.id), JSON.stringify(incidents));
   return incident;
 }
 
@@ -70,4 +78,24 @@ export function renvoyerEnAttente(equipementId: string): Incident[] {
   const incidents = chargerIncidents(equipementId).map((i) => (i.statut === "en_attente" ? { ...i, statut: "nouveau" as const } : i));
   window.localStorage.setItem(cle(equipementId), JSON.stringify(incidents));
   return incidents;
+}
+
+// Vue agrégée tous équipements confondus, pour les bannettes de l'itération 4.
+export function chargerTousIncidents(): Incident[] {
+  return EQUIPEMENTS.flatMap((e) => chargerIncidents(e.id));
+}
+
+const GRAVITE: Record<Urgence, number> = { danger: 0, forte: 1, normale: 2 };
+
+// Tri de la bannette : Danger en tête, puis du plus récent au plus ancien.
+export function trierParGraviteEtDate(incidents: Incident[]): Incident[] {
+  return [...incidents].sort((a, b) => {
+    const parGravite = GRAVITE[a.urgence] - GRAVITE[b.urgence];
+    if (parGravite !== 0) return parGravite;
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
+}
+
+export function renvoyerTousEnAttente(): void {
+  for (const e of EQUIPEMENTS) renvoyerEnAttente(e.id);
 }

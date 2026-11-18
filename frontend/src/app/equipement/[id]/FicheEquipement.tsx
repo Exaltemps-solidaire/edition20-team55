@@ -97,7 +97,7 @@ export function FicheEquipement({ id }: { id: string }) {
       setErreur(`Merci de renseigner : ${manquants.join(", ")}.`);
       return;
     }
-    const incident = ajouterIncident(id, { type, categorie, constat, photo, urgence }, persona!.nom, navigator.onLine);
+    const incident = ajouterIncident(equipement!, { type, categorie, constat, photo, urgence }, persona!.nom, navigator.onLine);
     setIncidents((prev) => [incident, ...prev]);
     setType("");
     setCategorie("");

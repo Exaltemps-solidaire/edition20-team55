@@ -1,0 +1,113 @@
+.notifs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px 0;
+}
+
+.notif {
+  background: var(--subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.notifLigne {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notifRegle {
+  font-size: 11px;
+  color: var(--faint);
+  margin-left: auto;
+}
+
+.notifTexte {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 16px 18px 0;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--subtle);
+}
+
+.actif {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.compteur {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.liste {
+  padding: 8px 8px 16px;
+}
+
+.vide {
+  padding: 16px 10px;
+  color: var(--muted);
+}
+
+.t {
+  font-weight: 620;
+  color: var(--strong);
+  font-size: 13.5px;
+}
+
+.m {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.r {
+  margin-left: auto;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.pt {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: none;
+}
+
+.bad {
+  background: var(--bad);
+}
+
+.warn {
+  background: var(--warn);
+}
+
+.blue {
+  background: var(--blue);
+}

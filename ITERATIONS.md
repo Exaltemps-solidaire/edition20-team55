@@ -113,3 +113,119 @@
 1. Notification du directeur national des infrastructures dès qu'un incident arrive, et enregistrement de l'intervention (prestataire, date, type de prise en charge), avec passage de l'équipement à « Réparé, à vérifier ».
 2. Validation RST sur place : il revoit la photo de départ, répond OK/KO avec une photo « après » ; OK valide l'incident, KO le rouvre. La fiche équipement affiche à cette occasion sa pastille d'état et l'historique des incidents/interventions (carnet de santé minimal, hypothèse 3).
 3. Si le temps le permet : champ libre « situation juridique du terrain » sur la fiche équipement (saisi à la main, jamais déduit), et stabilisation finale pour le pitch.
+
+## Itération 4 : Le directeur est prévenu et voit l'incident dans sa bannette
+
+- **Prérequis (2 min, inclus dans le budget)** : aligner l'urgence sur « Faible / À traiter / Danger » (E1) ; créer `etats.ts` avec les 5 états, leur couleur, leur icône Lucide et leur libellé, et faire afficher icône + libellé partout où un état apparaît (E2) ; rafraîchir `/parc` sur l'évènement `online` (E5) ; ajouter le persona PPUB Auvergne-Rhône-Alpes (E4).
+- **Dans le périmètre** :
+  - `regles.ts` : règles R1 à R4 de la spec (Danger → directeur ; Structure ou Fixation → directeur ; terrain de la ville ou sous convention → PPUB de la région ; sinon → RST du terrain). La première règle vraie fixe `attribueA` et `regleAppliquee`, enregistrés sur l'incident à sa réception ;
+  - dans `/parc`, panneau **Bannettes** à deux onglets avec compteurs : **Ma bannette** (incidents attribués au persona courant) et **Commune** (tous les incidents ouverts). Ligne : icône d'état, équipement + terrain, constat + ancienneté, personne attribuée (« Vous » si c'est le persona), « À prendre » ;
+  - **cartes de notification in-app** à la réception : « Teams, canal Infra [région] » pour tout incident ; « Mail immédiat » en plus si Danger. Chaque carte affiche la règle appliquée et un bouton « Ouvrir le carnet ».
+- **Hors périmètre** : onglet « Pour info » et messages aux personnes en copie (itération 7), édition des règles.
+- **Critères d'acceptation** :
+  - Étant donné un incident Danger signalé par le RST, quand il est reçu, alors il est attribué au directeur (règle R1) et une carte « Teams » et une carte « Mail immédiat » s'affichent.
+  - Étant donné le persona directeur, quand il ouvre `/parc`, alors l'incident est en tête de « Ma bannette » et présent dans « Commune », avec le statut « À prendre ».
+  - Étant donné un incident « Filet » sur un terrain campus propriétaire, quand il est reçu, alors il est attribué au RST du terrain (règle R4) et n'apparaît pas dans « Ma bannette » du directeur.
+  - Étant donné un incident mis en attente hors ligne, quand le réseau revient, alors la liste `/parc` se met à jour sans recharger la page.
+- **Hypothèse de l'équipe couverte** : notification Teams du PRD (« le directeur voit chaque incident sans consulter l'Excel »), traduite en notification in-app.
+- **Codage estimé** : 10 minutes
+- **Fichiers prévus** : `lib/etats.ts`, `lib/regles.ts`, `lib/notifications.ts`, `lib/personas.ts`, `lib/incidents.ts` (urgence, `attribueA`, `regleAppliquee`), `components/Bannettes.tsx`, `components/Notifications.tsx`, `app/parc/page.tsx`
+- **Tests unitaires prévus** : 4. R1 prioritaire sur R2 ; R3 sur terrain de la ville ; R4 par défaut ; tri de la bannette (nouveau d'abord, puis gravité).
+- **Étapes ajoutées à la démo** : persona RST, signaler un Danger ; passer en persona directeur ; voir les cartes Teams et Mail, puis l'incident en tête de « Ma bannette ».
+
+### Bilan
+
+- **Codage réel** : 9 min (`.iterations/4.debut` → `.iterations/4.fin`), dans le budget malgré l'autorisation de dépassement donnée par le développeur.
+- **Décision du développeur** : le développeur a explicitement autorisé à ignorer les limites de taille (max 3 critères, ~5 fichiers) et à garder les 4 critères d'acceptation du plan ci-dessus tel quel, avec 30 minutes disponibles pour l'itération complète (codage + vérification + publication).
+- **Simplifications assumées, non demandées explicitement par le développeur** (à reprendre si besoin) :
+  - les **prérequis E1/E2 (urgence « Faible/À traiter/Danger », `etats.ts`, icônes Lucide)** n'ont pas été faits : l'urgence reste `normale`/`forte`/`danger` telle qu'en itération 2, et les icônes restent des SVG en ligne (pas de nouvelle dépendance Lucide sous contrainte de temps) ;
+  - `notifications.ts`/`Notifications.tsx` n'ont pas été créés séparément : leur logique est repliée directement dans `components/Bannettes.tsx`, pour réduire le nombre de fichiers ;
+  - « canal Infra [région] » affiche en réalité la **ville** de l'équipement (`equipement.ville`), faute de champ région dans le modèle actuel ;
+  - la **notion de région** de la règle R3 a été simplifiée en un champ `proprietaire: "ville" | "convention" | "prive"` sur `Equipement` (nouveau champ), plutôt qu'un vrai découpage géographique.
+- **Modifications** :
+  - `frontend/src/lib/regles.ts` (nouveau) : implémente R1 à R4, sert les 1er, 2e et 3e critères d'acceptation (attribution).
+  - `frontend/src/lib/equipements.ts` : ajoute `Proprietaire`/`proprietaire` par équipement, nécessaire à R3/R4 ; `EQ-SAE1-FP1` est marqué `"prive"` pour servir le 3e critère (terrain campus propriétaire).
+  - `frontend/src/lib/personas.ts` : ajoute le rôle `"ppub"` et le persona Nadia Pastor, nécessaire pour que R3 ait un destinataire.
+  - `frontend/src/lib/incidents.ts` : `Incident` porte désormais `attribueA`/`regleAppliquee`, calculés par `attribuer()` dans `ajouterIncident` (qui prend maintenant l'`Equipement` complet, pas seulement son id) ; ajoute `chargerTousIncidents()` (vue toutes bannettes) et `renvoyerTousEnAttente()`/`trierParGraviteEtDate()` pour le 4e critère (rafraîchissement réseau) et le tri de la bannette.
+  - `frontend/src/components/Bannettes.tsx` + `.module.css` (nouveaux) : panneau Ma bannette/Commune avec compteurs, cartes de notification Teams/Mail immédiat, sert les 4 critères d'acceptation.
+  - `frontend/src/app/parc/page.tsx` : intègre `<Bannettes>`, ajoute l'écoute de l'évènement `online` qui rejoue `renvoyerTousEnAttente()` et force le recalcul (4e critère).
+  - `frontend/src/app/equipement/[id]/FicheEquipement.tsx` : adapte l'appel à `ajouterIncident` à sa nouvelle signature (passe l'équipement, pas son id).
+  - `frontend/src/lib/regles.test.ts` (nouveau, 3 tests) et `frontend/src/lib/incidents.test.ts` (+1 test) : les 4 tests prévus (R1 prioritaire sur R2, R3 sur terrain de la ville, R4 par défaut, tri de la bannette).
+- **Vérifications** : `npm test` (10/10 passent), `npm run build`, `npm run lint` (0 erreur), `./scripts/verifier-deployabilite.sh` (aucune borne franchie).
+- **Déployé** : image frontend reconstruite et publiée (`localhost:5000/team55/frontend:dev`), stack recréée (`podman compose up -d --force-recreate`) ; `localhost:8080/`, `/sante` et `localhost:8081/health` répondent 200 depuis la machine. **Reste à confirmer par le développeur depuis son navigateur** : `$URL_PUBLIQUE/health` et `$URL_PUBLIQUE/sante`.
+
+## Itération 5 : Le directeur enregistre l'intervention, photo de réparation obligatoire
+
+- **Dans le périmètre** :
+  - sur `/equipement/[id]`, boutons « Prendre en charge » (l'incident quitte « À prendre ») et « Enregistrer l'intervention » (états Incident ouvert et Danger) ;
+  - fenêtre **Enregistrer l'intervention** : prestataire (choix parmi 4 valeurs fictives ou texte libre), date, prise en charge **proposée selon la situation juridique** (Campus → Association ; Convention ou Terrain de la ville → Ville ; Sans convention → À arbitrer), modifiable ; **photo de la réparation obligatoire** (`input[type=file]` en data URL, comme la photo du constat), aperçu avec « Reprendre » ;
+  - à la validation : création d'une `Intervention` (avec `photoReparation`), équipement en **« Réparé, à vérifier »** (bleu, icône Wrench), carte « Teams, conversation avec [RST] : demande de vérification ».
+- **Hors périmètre** : gestion des prestataires et des contrats, vérification par le RST (itération 6).
+- **Critères d'acceptation** :
+  - Étant donné la fenêtre sans photo, alors « Marquer réparé, à vérifier » est inactif et un message dit pourquoi.
+  - Étant donné un terrain sous convention avec la ville, quand la fenêtre s'ouvre, alors la prise en charge proposée est « Ville ».
+  - Étant donné une photo ajoutée, quand le directeur valide, alors l'équipement passe à « Réparé, à vérifier » dans la fiche et dans `/parc`, et une carte « demande de vérification » s'affiche.
+- **Hypothèse de l'équipe couverte** : préparation de la validation RST (« le directeur sait si l'intervention a réussi »).
+- **Codage estimé** : 10 minutes
+- **Fichiers prévus** : `lib/interventions.ts`, `lib/etats.ts` (transition), `app/equipement/[id]/FicheEquipement.tsx`, `components/FenetreIntervention.tsx`
+- **Tests unitaires prévus** : 3. validation impossible sans photo ; prise en charge proposée par situation juridique ; transition Incident ouvert → Réparé, à vérifier.
+- **Étapes ajoutées à la démo** : persona directeur, ouvrir l'équipement depuis la bannette, enregistrer l'intervention (montrer le blocage sans photo), voir le passage au bleu.
+
+## Itération 6 : Le RST vérifie sur place et le carnet de santé se remplit
+
+- **Dans le périmètre** :
+  - persona RST : bloc **« À vérifier »** en haut de `/parc` (ou de `/terrain` si l'itération 8 est faite) listant les équipements « Réparé, à vérifier » de ses terrains ;
+  - écran **Vérifier** : photo de départ et photo de réparation **côte à côte**, résumé de l'intervention, photo « après », boutons « OK, validé » (exige la photo après) et « KO, rouvrir » ;
+  - OK : incident « Validé par le RST », équipement « Vérifié » (vert), carte « Teams : validé sur place » ; KO : incident « Rouvert », de nouveau « À prendre » ;
+  - **carnet minimal** sur `/equipement/[id]` : pastille d'état (couleur + icône + libellé), photos dans l'ordre **avant / réparation / après**, historique daté (incidents, interventions, validations triés par date), bloc Attribution (personne, règle).
+- **Hors périmètre** : alerte récidive, export, impression.
+- **Critères d'acceptation** :
+  - Étant donné un équipement « Réparé, à vérifier », quand le RST ouvre la vérification, alors il voit la photo de départ et la photo de réparation côte à côte.
+  - Étant donné l'absence de photo après, alors « OK, validé » est inactif.
+  - Étant donné OK, alors l'incident est clos et l'équipement repasse au vert ; étant donné KO, alors l'incident redevient « À prendre ».
+  - Étant donné un équipement passé par tout le cycle, quand on ouvre sa fiche, alors l'historique daté et les trois photos sont affichés.
+- **Hypothèses de l'équipe couvertes** : validation RST ; carnet de santé (« chaque équipement dispose d'un historique daté »).
+- **Codage estimé** : 10 minutes
+- **Fichiers prévus** : `lib/validations.ts`, `lib/historique.ts` (reconstruction depuis incidents, interventions, validations), `components/Verifier.tsx`, `app/equipement/[id]/FicheEquipement.tsx`, `app/parc/page.tsx`
+- **Tests unitaires prévus** : 4. OK impossible sans photo après ; OK clôt et remet à Vérifié ; KO rouvre ; reconstruction de l'historique triée par date.
+- **Étapes ajoutées à la démo** : persona RST, « À vérifier », photo après, OK ; ouvrir le carnet et montrer l'historique complet.
+
+## Itération 7 (bonus) : « Pour info » et règles visibles
+
+- **Dans le périmètre** :
+  - `regles.ts` calcule aussi `pourInfo` (R1 : RST du terrain, suppléant, PPUB ; R2 : RST du terrain ; R3 : directeur ; R4 : personne), l'auteur n'étant jamais en copie ;
+  - troisième onglet **« Pour info »** dans les bannettes, et carte « Teams, pour info : incident sérieux, à regarder » pour R1 et R2 uniquement ;
+  - fenêtre **« Voir les règles »** (lecture) avec le tableau R1 à R4 et la phrase d'accompagnement de la spec (F4).
+- **Critères d'acceptation** :
+  - Étant donné un Danger signalé par le RST, alors la suppléante et la PPUB le voient dans « Pour info » et une carte « pour info » s'affiche ; le RST auteur n'est pas en copie.
+  - Étant donné un incident R4, alors aucune carte « pour info » n'est émise.
+- **Codage estimé** : 8 minutes
+- **Tests unitaires prévus** : 2. liste `pourInfo` par règle ; exclusion de l'auteur.
+
+## Itération 8 (bonus) : Interface ISO prototype
+
+- **Dans le périmètre** :
+  - **en-tête** du prototype : marque, fil d'Ariane, persona avec avatar, bouton « Téléphone RST », bascule thème clair / sombre (icônes Lucide Moon / Sun) ;
+  - **4 indicateurs cliquables** en haut de `/parc` : Danger, À prendre en charge, Réparés à vérifier, Récidives (étiquette V2, valeur 0 autorisée) ;
+  - **route `/terrain`** : parcours RST M1 à M6 dans un **cadre téléphone** sur ordinateur (plein écran sur mobile), avec écran **Identifier** à deux onglets **Badge NFC** (simulé, ondes animées) et **QR code** (simulé) ;
+  - **barre d'outils de test** discrète : interrupteur réseau, sélecteur **App Power Apps / Navigateur** (en Navigateur : onglet NFC désactivé, enregistrement hors ligne bloqué avec message) ;
+  - animations du prototype : onglets à segment glissant, listes en cascade, compteurs animés, respect de `prefers-reduced-motion`.
+- **Hors périmètre** : carte de France (V2), démo guidée (ne jamais la construire).
+- **Critères d'acceptation** :
+  - Étant donné `/terrain` sur ordinateur, alors le parcours s'affiche dans un cadre téléphone à côté de `/parc`.
+  - Étant donné le mode Navigateur et le réseau coupé, alors l'onglet NFC est désactivé et l'enregistrement est refusé avec un message.
+  - Étant donné un clic sur un indicateur, alors la liste et la bannette sont filtrées.
+- **Codage estimé** : 10 minutes (si dépassement : livrer d'abord indicateurs + en-tête, reporter le cadre téléphone)
+- **Tests unitaires prévus** : 1. règle « Navigateur + hors ligne ⇒ enregistrement refusé ».
+
+---
+
+## Dette technique à traiter hors chrono (si une machine le permet)
+
+1. Rendre `e2e/demo.spec.ts` exécutable (Chromium et `libnspr4.so` manquants sur cette machine) et couper réellement le réseau avec `context.setOffline`.
+2. Déduplication par `idLocal` (UUID généré à la saisie) pour garantir « jamais de doublon » au renvoi.
+3. Photos en data URL dans `localStorage` : prévoir une taille maximale pour ne pas saturer le stockage du navigateur.
+
+## Après le pitch (V2, ne pas construire maintenant)
+
+Carte de France, alerte récidive, relance automatique après 48 h, édition des règles par la référente, administration (terrains, équipements, planche QR, export des identifiants NFC), contrôles planifiés.

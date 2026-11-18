@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { EnTete } from "@/components/EnTete";
+import { Bannettes } from "@/components/Bannettes";
 import { trouverPersona, type Persona } from "@/lib/personas";
 import { EQUIPEMENTS, ETATS } from "@/lib/equipements";
-import { aUnIncidentDanger, chargerIncidents } from "@/lib/incidents";
+import { aUnIncidentDanger, chargerIncidents, renvoyerTousEnAttente } from "@/lib/incidents";
 import styles from "./page.module.css";
 
 function personaInitial(): Persona | null {
@@ -25,11 +26,22 @@ function enDangerInitial(): Record<string, boolean> {
 export default function Parc() {
   const router = useRouter();
   const [persona] = useState<Persona | null>(personaInitial);
-  const [enDanger] = useState<Record<string, boolean>>(enDangerInitial);
+  const [enDanger, setEnDanger] = useState<Record<string, boolean>>(enDangerInitial);
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     if (!persona) router.replace("/");
   }, [persona, router]);
+
+  useEffect(() => {
+    function auRetourDuReseau() {
+      renvoyerTousEnAttente();
+      setEnDanger(enDangerInitial());
+      setVersion((v) => v + 1);
+    }
+    window.addEventListener("online", auRetourDuReseau);
+    return () => window.removeEventListener("online", auRetourDuReseau);
+  }, []);
 
   function changerDeRole() {
     window.localStorage.removeItem("persona-id");
@@ -48,6 +60,7 @@ export default function Parc() {
             80 terrains, 5 régions, jeu de données fictif.
           </div>
         </div>
+        <Bannettes persona={persona} version={version} />
         <section className="card">
           <div className={styles.secH}>
             <h2>Équipements</h2>

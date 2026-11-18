@@ -1,5 +1,5 @@
 // Pas de connexion dans cette version : on incarne un persona choisi dans une liste (cadrage §"Les utilisateurs : pas de connexion").
-export type Role = "rst" | "directeur";
+export type Role = "rst" | "directeur" | "ppub";
 
 export type Persona = {
   id: string;
@@ -20,6 +20,12 @@ export const PERSONAS: Persona[] = [
     nom: "Élise Fontaine",
     role: "directeur",
     libelleRole: "Directeur national des infrastructures",
+  },
+  {
+    id: "ppub-nadia",
+    nom: "Nadia Pastor",
+    role: "ppub",
+    libelleRole: "PPUB Auvergne-Rhône-Alpes",
   },
 ];
 
