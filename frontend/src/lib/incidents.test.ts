@@ -4,6 +4,8 @@ import {
   aUnIncidentDanger,
   champsManquants,
   chargerIncidents,
+  etatDerive,
+  marquerReparee,
   renvoyerEnAttente,
   trierParGraviteEtDate,
   type Incident,
@@ -41,6 +43,7 @@ describe("aUnIncidentDanger", () => {
     attribueA: "rst-amara",
     regleAppliquee: "R4",
     prisEnCharge: false,
+    etape: "ouvert",
   };
 
   it("renvoie vrai si un incident nouveau est en urgence danger", () => {
@@ -51,6 +54,36 @@ describe("aUnIncidentDanger", () => {
   it("renvoie faux si aucun incident n'est en urgence danger", () => {
     const incidents: Incident[] = [{ ...base, urgence: "forte", statut: "nouveau" }];
     expect(aUnIncidentDanger(incidents)).toBe(false);
+  });
+});
+
+describe("etatDerive", () => {
+  const equipementId = "EQ-DERIVE";
+  const base: Omit<Incident, "urgence" | "statut" | "etape"> = {
+    id: "INC-1",
+    equipementId,
+    type: "Filet déchiré",
+    categorie: "Usure",
+    constat: "Trou visible",
+    photo: "photo.jpg",
+    auteur: "RST",
+    date: new Date().toISOString(),
+    attribueA: "rst-amara",
+    regleAppliquee: "R4",
+    prisEnCharge: false,
+  };
+
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("passe à « reparation » une fois l'incident marqué réparé", () => {
+    const incident: Incident = { ...base, urgence: "danger", statut: "nouveau", etape: "ouvert" };
+    window.localStorage.setItem(`incidents-${equipementId}`, JSON.stringify([incident]));
+    expect(etatDerive(chargerIncidents(equipementId))).toBe("bad");
+
+    const apres = marquerReparee(equipementId, incident.id);
+    expect(etatDerive(apres)).toBe("reparation");
   });
 });
 
@@ -89,6 +122,7 @@ describe("trierParGraviteEtDate", () => {
     attribueA: "rst-amara",
     regleAppliquee: "R4",
     prisEnCharge: false,
+    etape: "ouvert",
   };
 
   it("place les incidents Danger en tête, puis du plus récent au plus ancien", () => {

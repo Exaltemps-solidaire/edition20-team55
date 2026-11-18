@@ -1,5 +1,5 @@
 // Vocabulaire et villes repris du prototype (cadrage/4-prototype.md) : noms de villes et de terrains publics.
-export type EtatEquipement = "ok" | "grey" | "bad";
+export type EtatEquipement = "ok" | "grey" | "bad" | "reparation";
 
 // Situation juridique du terrain (règle R3) : simplifiée ici en 3 valeurs fixes.
 // À terme (itération ultérieure), ce sera un champ libre saisi à la main sur la fiche équipement.
@@ -26,4 +26,5 @@ export const ETATS: Record<EtatEquipement, { libelle: string; classe: string }> 
   ok: { libelle: "Vérifié, RAS", classe: "s-ok" },
   grey: { libelle: "Pas d'info récente", classe: "s-grey" },
   bad: { libelle: "Incident signalé", classe: "s-bad" },
+  reparation: { libelle: "Réparé, à vérifier", classe: "s-blue" },
 };

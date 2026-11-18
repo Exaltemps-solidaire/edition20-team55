@@ -171,6 +171,24 @@
 - **Tests unitaires prévus** : 3. validation impossible sans photo ; prise en charge proposée par situation juridique ; transition Incident ouvert → Réparé, à vérifier.
 - **Étapes ajoutées à la démo** : persona directeur, ouvrir l'équipement depuis la bannette, enregistrer l'intervention (montrer le blocage sans photo), voir le passage au bleu.
 
+### Bilan (réduit, 25 min restantes au total pour codage + publication + tour de test)
+
+Codage réel : 5 minutes (`.iterations/5.debut`/`.fin`).
+
+- **Simplifications par rapport au plan** :
+  - pas de composant séparé `components/FenetreIntervention.tsx` : le formulaire est construit **en ligne** dans `FicheEquipement.tsx`, directement sous l'incident concerné, en réutilisant les classes `.form` déjà présentes dans `page.module.css` (budget trop serré pour un nouveau composant + sa CSS) ;
+  - prestataire en texte libre, pas de choix parmi 4 valeurs fictives ;
+  - `priseEnChargeProposee` ne couvre que 2 cas sur 3 de la spec (Ville / Association) : le modèle de données n'a pas de catégorie « Sans convention », donc le cas « À arbitrer » est sans objet ici — documenté en commentaire dans `interventions.ts` ;
+  - le bouton « Prendre en charge » (déjà livré hors-itération, commit `1b0f64c`, sans tests ni publication à l'époque) est absorbé dans cette itération : c'est lui qui précède « Enregistrer l'intervention » dans l'enchaînement des boutons.
+- **Modifications** :
+  - `lib/interventions.ts` (nouveau) : type `Intervention`, `champsManquantsIntervention` (photo de réparation obligatoire), `priseEnChargeProposee`, `ajouterIntervention` — sert les 3 critères d'acceptation ;
+  - `lib/incidents.ts` : champ `etape: "ouvert" | "reparee"` sur `Incident`, `marquerReparee`, et `etatDerive` qui centralise l'état affiché (Danger en cours > réparation à vérifier) pour `/equipement/[id]` et `/parc` — sert le 3e critère (passage à « Réparé, à vérifier ») ;
+  - `lib/equipements.ts` : nouvel état `reparation` (« Réparé, à vérifier », bleu) ;
+  - `app/equipement/[id]/FicheEquipement.tsx` : enchaînement de boutons « Prendre en charge » → « Enregistrer l'intervention » (formulaire en ligne, bloqué sans photo) → badge « Réparé, à vérifier », et carte « Teams, conversation avec le RST : demande de vérification envoyée » après validation ;
+  - `app/parc/page.tsx` : bascule de l'ancien booléen `enDanger` vers `etatDerive`, pour que `/parc` reflète aussi l'état « Réparé, à vérifier » ;
+  - tests (3, comme prévu) : `interventions.test.ts` (validation sans photo ; prise en charge proposée selon le propriétaire) et un test ajouté dans `incidents.test.ts` (transition `etatDerive` : « bad » puis, après `marquerReparee`, « reparation »).
+- **Hors périmètre, reporté** : écran de vérification RST, carnet de santé, historique daté — **itération 6, non commencée**, par choix explicite du développeur pour tenir le budget de 25 minutes restantes.
+
 ## Itération 6 : Le RST vérifie sur place et le carnet de santé se remplit
 
 - **Dans le périmètre** :

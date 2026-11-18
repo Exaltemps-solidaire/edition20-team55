@@ -7,7 +7,7 @@ import { EnTete } from "@/components/EnTete";
 import { Bannettes } from "@/components/Bannettes";
 import { trouverPersona, type Persona } from "@/lib/personas";
 import { EQUIPEMENTS, ETATS } from "@/lib/equipements";
-import { aUnIncidentDanger, chargerIncidents, renvoyerTousEnAttente } from "@/lib/incidents";
+import { chargerIncidents, etatDerive, renvoyerTousEnAttente } from "@/lib/incidents";
 import styles from "./page.module.css";
 
 function personaInitial(): Persona | null {
@@ -15,10 +15,10 @@ function personaInitial(): Persona | null {
   return trouverPersona(window.localStorage.getItem("persona-id"));
 }
 
-function enDangerInitial(): Record<string, boolean> {
-  const etats: Record<string, boolean> = {};
+function etatDeriveInitial(): Record<string, "bad" | "reparation" | null> {
+  const etats: Record<string, "bad" | "reparation" | null> = {};
   for (const e of EQUIPEMENTS) {
-    etats[e.id] = aUnIncidentDanger(chargerIncidents(e.id));
+    etats[e.id] = etatDerive(chargerIncidents(e.id));
   }
   return etats;
 }
@@ -26,7 +26,7 @@ function enDangerInitial(): Record<string, boolean> {
 export default function Parc() {
   const router = useRouter();
   const [persona] = useState<Persona | null>(personaInitial);
-  const [enDanger, setEnDanger] = useState<Record<string, boolean>>(enDangerInitial);
+  const [etatParEquipement, setEtatParEquipement] = useState<Record<string, "bad" | "reparation" | null>>(etatDeriveInitial);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function Parc() {
   useEffect(() => {
     function auRetourDuReseau() {
       renvoyerTousEnAttente();
-      setEnDanger(enDangerInitial());
+      setEtatParEquipement(etatDeriveInitial());
       setVersion((v) => v + 1);
     }
     window.addEventListener("online", auRetourDuReseau);
@@ -68,7 +68,8 @@ export default function Parc() {
           </div>
           <div className={styles.liste}>
             {EQUIPEMENTS.map((e) => {
-              const etat = enDanger[e.id] ? ETATS.bad : ETATS[e.etat];
+              const derive = etatParEquipement[e.id];
+              const etat = derive ? ETATS[derive] : ETATS[e.etat];
               return (
                 <Link className="row" href={`/equipement/${e.id}`} key={e.id}>
                   <span className={styles.ic}>

@@ -18,6 +18,7 @@ export type Incident = {
   attribueA: string;
   regleAppliquee: CodeRegle;
   prisEnCharge: boolean;
+  etape: "ouvert" | "reparee";
 };
 
 export type SaisieIncident = {
@@ -70,6 +71,7 @@ export function ajouterIncident(equipement: Equipement, saisie: SaisieIncident, 
     attribueA,
     regleAppliquee,
     prisEnCharge: false,
+    etape: "ouvert",
   };
   const incidents = [incident, ...chargerIncidents(equipement.id)];
   window.localStorage.setItem(cle(equipement.id), JSON.stringify(incidents));
@@ -80,6 +82,19 @@ export function prendreEnCharge(equipementId: string, incidentId: string): Incid
   const incidents = chargerIncidents(equipementId).map((i) => (i.id === incidentId ? { ...i, prisEnCharge: true } : i));
   window.localStorage.setItem(cle(equipementId), JSON.stringify(incidents));
   return incidents;
+}
+
+export function marquerReparee(equipementId: string, incidentId: string): Incident[] {
+  const incidents = chargerIncidents(equipementId).map((i) => (i.id === incidentId ? { ...i, etape: "reparee" as const } : i));
+  window.localStorage.setItem(cle(equipementId), JSON.stringify(incidents));
+  return incidents;
+}
+
+// État affiché sur la fiche et dans /parc, dérivé des incidents : Danger en cours prime, puis réparation en attente de vérification.
+export function etatDerive(incidents: Incident[]): "bad" | "reparation" | null {
+  if (incidents.some((i) => i.urgence === "danger" && i.etape === "ouvert")) return "bad";
+  if (incidents.some((i) => i.etape === "reparee")) return "reparation";
+  return null;
 }
 
 export function renvoyerEnAttente(equipementId: string): Incident[] {
