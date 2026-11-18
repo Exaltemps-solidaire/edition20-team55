@@ -95,7 +95,16 @@
 - **Fichiers prévus** : file d'attente locale (stockage navigateur), écouteur d'évènement réseau, affichage du statut « en attente »
 - **Tests unitaires prévus** : 2 — ajout à la file quand l'envoi échoue ; purge de la file et passage à « Nouveau » après envoi réussi.
 - **Étapes ajoutées à la démo** : couper le réseau, signaler un incident, montrer le statut « en attente », remettre le réseau, montrer l'envoi automatique.
-- **Bilan** : _à remplir en fin d'itération._
+- **Bilan** :
+  - ⚠️ Temps restant annoncé au début de cette itération : ~15 minutes ou moins — insuffisant pour codage + publication + tour de test PM Lab complet (~25 min). Signalé au développeur (✂️), qui a choisi une version réduite plutôt que de reporter l'itération entièrement.
+  - Durée de codage réelle : 1 minute (budget serré tenu).
+  - Critères d'acceptation : les 3 sont satisfaits dans leur principe, mais sans vrai réseau à couper : il n'existe aucun appel réseau pour l'envoi d'un incident (tout est déjà en `localStorage`, aucun backend d'incidents). Le statut « hors ligne » est donc déterminé à la soumission via `navigator.onLine`, pas par l'échec d'un appel ; l'équipement de secours au retour en ligne (évènement `online`) fait repasser tous les incidents « en attente » de la fiche à « Nouveau », sans perte (couvert par les 2 tests Vitest ajoutés).
+  - Reporté à une itération ultérieure si le temps le permet après le pitch : couper réellement le réseau dans la démo Playwright (`context.setOffline`), et étendre le rafraîchissement automatique à la liste `/parc` (actuellement recalculée seulement au chargement de la page, pas en direct au retour réseau).
+  - Hors DoD, non tenté par manque de temps : mise à jour de `e2e/demo.spec.ts` pour ce parcours.
+  - **Modifications** :
+    - `frontend/src/lib/incidents.ts` — `Incident.statut` accepte désormais `"en_attente"`, `ajouterIncident` prend un paramètre `enLigne`, nouvelle fonction `renvoyerEnAttente` (critères 1, 2, 3).
+    - `frontend/src/lib/incidents.test.ts` — 2 tests Vitest ajoutés : mise en attente hors ligne, passage à « Nouveau » sans perte au retour réseau (DoD point 2).
+    - `frontend/src/app/equipement/[id]/FicheEquipement.tsx` — écouteur `window.addEventListener("online", ...)`, badge « En attente d'envoi », passage de `navigator.onLine` à `ajouterIncident` (critères 1, 2, 3).
 
 ---
 

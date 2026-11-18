@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { aUnIncidentDanger, champsManquants, type Incident } from "./incidents";
+import { beforeEach, describe, expect, it } from "vitest";
+import { ajouterIncident, aUnIncidentDanger, champsManquants, chargerIncidents, renvoyerEnAttente, type Incident } from "./incidents";
 
 describe("champsManquants", () => {
   it("liste les champs obligatoires absents", () => {
@@ -39,5 +39,27 @@ describe("aUnIncidentDanger", () => {
   it("renvoie faux si aucun incident n'est en urgence danger", () => {
     const incidents: Incident[] = [{ ...base, urgence: "forte", statut: "nouveau" }];
     expect(aUnIncidentDanger(incidents)).toBe(false);
+  });
+});
+
+describe("file d'attente hors ligne", () => {
+  const equipementId = "EQ-TEST";
+  const saisie = { type: "Filet déchiré", categorie: "Usure", constat: "Trou visible", photo: "photo.jpg", urgence: "forte" as const };
+
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("met l'incident en attente quand il est créé hors ligne", () => {
+    ajouterIncident(equipementId, saisie, "RST", false);
+    expect(chargerIncidents(equipementId)[0].statut).toBe("en_attente");
+  });
+
+  it("passe tous les incidents en attente à « nouveau » au retour du réseau, sans perte", () => {
+    ajouterIncident(equipementId, saisie, "RST", false);
+    ajouterIncident(equipementId, saisie, "RST", false);
+    const incidents = renvoyerEnAttente(equipementId);
+    expect(incidents).toHaveLength(2);
+    expect(incidents.every((i) => i.statut === "nouveau")).toBe(true);
   });
 });

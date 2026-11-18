@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import { EnTete } from "@/components/EnTete";
 import { trouverPersona, type Persona } from "@/lib/personas";
 import { EQUIPEMENTS, ETATS } from "@/lib/equipements";
-import { ajouterIncident, aUnIncidentDanger, champsManquants, chargerIncidents, type Incident, type Urgence } from "@/lib/incidents";
+import {
+  ajouterIncident,
+  aUnIncidentDanger,
+  champsManquants,
+  chargerIncidents,
+  renvoyerEnAttente,
+  type Incident,
+  type Urgence,
+} from "@/lib/incidents";
 import styles from "./page.module.css";
 
 function personaInitial(): Persona | null {
@@ -53,6 +61,14 @@ export function FicheEquipement({ id }: { id: string }) {
     if (!persona) router.replace("/");
   }, [persona, router]);
 
+  useEffect(() => {
+    function auRetourDuReseau() {
+      setIncidents(renvoyerEnAttente(id));
+    }
+    window.addEventListener("online", auRetourDuReseau);
+    return () => window.removeEventListener("online", auRetourDuReseau);
+  }, [id]);
+
   if (!persona) return null;
 
   function changerDeRole() {
@@ -81,7 +97,7 @@ export function FicheEquipement({ id }: { id: string }) {
       setErreur(`Merci de renseigner : ${manquants.join(", ")}.`);
       return;
     }
-    const incident = ajouterIncident(id, { type, categorie, constat, photo, urgence }, persona!.nom);
+    const incident = ajouterIncident(id, { type, categorie, constat, photo, urgence }, persona!.nom, navigator.onLine);
     setIncidents((prev) => [incident, ...prev]);
     setType("");
     setCategorie("");
@@ -161,6 +177,7 @@ export function FicheEquipement({ id }: { id: string }) {
                   <span className={styles.m}>{i.constat}</span>
                 </span>
                 <span className={styles.r}>
+                  {i.statut === "en_attente" && <span className="st s-grey">En attente d&rsquo;envoi</span>}
                   <span className={`st ${CLASSES_URGENCE[i.urgence]}`}>{LIBELLES_URGENCE[i.urgence]}</span>
                 </span>
               </div>

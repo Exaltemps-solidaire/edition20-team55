@@ -11,7 +11,7 @@ export type Incident = {
   urgence: Urgence;
   auteur: string;
   date: string;
-  statut: "nouveau";
+  statut: "nouveau" | "en_attente";
 };
 
 export type SaisieIncident = {
@@ -35,7 +35,7 @@ export function champsManquants(saisie: SaisieIncident): string[] {
 }
 
 export function aUnIncidentDanger(incidents: Incident[]): boolean {
-  return incidents.some((i) => i.urgence === "danger" && i.statut === "nouveau");
+  return incidents.some((i) => i.urgence === "danger");
 }
 
 function cle(equipementId: string): string {
@@ -48,7 +48,7 @@ export function chargerIncidents(equipementId: string): Incident[] {
   return brut ? (JSON.parse(brut) as Incident[]) : [];
 }
 
-export function ajouterIncident(equipementId: string, saisie: SaisieIncident, auteur: string): Incident {
+export function ajouterIncident(equipementId: string, saisie: SaisieIncident, auteur: string, enLigne: boolean): Incident {
   const incident: Incident = {
     id: `INC-${Date.now()}`,
     equipementId,
@@ -59,9 +59,15 @@ export function ajouterIncident(equipementId: string, saisie: SaisieIncident, au
     urgence: saisie.urgence as Urgence,
     auteur,
     date: new Date().toISOString(),
-    statut: "nouveau",
+    statut: enLigne ? "nouveau" : "en_attente",
   };
   const incidents = [incident, ...chargerIncidents(equipementId)];
   window.localStorage.setItem(cle(equipementId), JSON.stringify(incidents));
   return incident;
+}
+
+export function renvoyerEnAttente(equipementId: string): Incident[] {
+  const incidents = chargerIncidents(equipementId).map((i) => (i.statut === "en_attente" ? { ...i, statut: "nouveau" as const } : i));
+  window.localStorage.setItem(cle(equipementId), JSON.stringify(incidents));
+  return incidents;
 }
