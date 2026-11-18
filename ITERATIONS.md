@@ -30,7 +30,23 @@
 - **Fichiers prévus** : page/route d'accueil (persona picker), écran principal (liste équipements), état du persona choisi (contexte/store), `.env.example`, `DEPLOIEMENT.md`
 - **Tests unitaires prévus** : aucun — pas de logique métier au-delà de l'affichage et d'une sélection triviale dans cette itération.
 - **Étapes ajoutées à la démo** : ouvrir l'app, choisir le persona RST, voir l'écran principal.
-- **Bilan** : _à remplir en fin d'itération._
+- **Bilan** :
+  - Durée de codage réelle : 9 minutes (budget 10 min respecté, alarme des 8 minutes déclenchée — le développeur a choisi de finaliser, il n'y avait plus de codage à faire).
+  - Demande ajoutée en cours d'itération par le développeur : reprendre le plus fidèlement possible le design du prototype `ressources/example.html` (jetons de couleur, typographie Inter, en-tête, cartes, badges de statut). Intégrée dans le budget initial sans le dépasser, en portant le système de design dans `globals.css` et un composant `EnTete` partagés, plutôt que de reproduire tout le prototype interactif (carte, simulateur téléphone, scan QR) qui reste hors périmètre de cette itération.
+  - Critères d'acceptation : les 3 sont satisfaits (vérifiés en local via `curl` sur l'app déployée : `/` liste les deux personas, le choix mène à `/parc` avec la liste d'équipements et un bouton « changer de rôle », `/health` et `/sante` répondent 200 avec un corps non vide sur le port 8080).
+  - Reporté : rien de prévu à cette itération n'a été reporté.
+  - Bloqué puis résolu hors codage : le démarrage de la plateforme a buté sur la limite de pull anonyme de Docker Hub (`toomanyrequests`) — resté sans rapport avec le code de l'app. Résolu après authentification Docker Hub fournie par le développeur (`podman login`), sans impact sur le budget de codage.
+  - Hors DoD, tenté : mise à jour de `e2e/demo.spec.ts` avec le parcours de cette itération (choix du persona RST, affichage de la liste). Le navigateur Chromium de Playwright ne peut pas se lancer sur cette machine (bibliothèques système manquantes, `libnspr4.so`) — la démo est donc écrite mais non exécutable ici ; signalé sans bloquer, comme prévu.
+  - **Modifications** :
+    - `frontend/src/app/page.tsx`, `page.module.css` — écran « Qui êtes-vous ? » (critère 1).
+    - `frontend/src/app/parc/page.tsx`, `page.module.css` — écran principal, liste des équipements, bouton « changer de rôle » (critère 2).
+    - `frontend/src/lib/personas.ts`, `frontend/src/lib/equipements.ts` — données d'exemple et logique de sélection du persona (critères 1 et 2).
+    - `frontend/src/components/EnTete.tsx`, `frontend/src/app/globals.css`, `frontend/src/app/layout.tsx` — système de design repris du prototype (demande ajoutée en cours d'itération).
+    - `frontend/nginx.conf` — en-têtes de sécurité et route `/health`/`/sante` (critère 3).
+    - `.env.example`, `DEPLOIEMENT.md` — contrat de déployabilité (critère 3).
+    - `api/Dockerfile`, `frontend/Dockerfile` — images de base qualifiées `docker.io/library/…` (contrainte du `/CLAUDE.md` racine).
+    - `podman-compose.yml` — déploiement (ports 8080/8081, réseau `core-network`).
+    - `e2e/demo.spec.ts` — étapes de démo ajoutées (non exécutable sur cette machine, cf. ci-dessus).
 
 ## Itération 2 : Le RST signale un incident depuis la fiche d'un équipement
 
