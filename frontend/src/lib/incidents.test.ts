@@ -40,6 +40,7 @@ describe("aUnIncidentDanger", () => {
     date: new Date().toISOString(),
     attribueA: "rst-amara",
     regleAppliquee: "R4",
+    prisEnCharge: false,
   };
 
   it("renvoie vrai si un incident nouveau est en urgence danger", () => {
@@ -87,6 +88,7 @@ describe("trierParGraviteEtDate", () => {
     auteur: "RST",
     attribueA: "rst-amara",
     regleAppliquee: "R4",
+    prisEnCharge: false,
   };
 
   it("place les incidents Danger en tête, puis du plus récent au plus ancien", () => {

@@ -17,6 +17,7 @@ export type Incident = {
   statut: "nouveau" | "en_attente";
   attribueA: string;
   regleAppliquee: CodeRegle;
+  prisEnCharge: boolean;
 };
 
 export type SaisieIncident = {
@@ -68,10 +69,17 @@ export function ajouterIncident(equipement: Equipement, saisie: SaisieIncident, 
     statut: enLigne ? "nouveau" : "en_attente",
     attribueA,
     regleAppliquee,
+    prisEnCharge: false,
   };
   const incidents = [incident, ...chargerIncidents(equipement.id)];
   window.localStorage.setItem(cle(equipement.id), JSON.stringify(incidents));
   return incident;
+}
+
+export function prendreEnCharge(equipementId: string, incidentId: string): Incident[] {
+  const incidents = chargerIncidents(equipementId).map((i) => (i.id === incidentId ? { ...i, prisEnCharge: true } : i));
+  window.localStorage.setItem(cle(equipementId), JSON.stringify(incidents));
+  return incidents;
 }
 
 export function renvoyerEnAttente(equipementId: string): Incident[] {

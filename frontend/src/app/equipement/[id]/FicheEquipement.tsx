@@ -10,6 +10,7 @@ import {
   aUnIncidentDanger,
   champsManquants,
   chargerIncidents,
+  prendreEnCharge,
   renvoyerEnAttente,
   type Incident,
   type Urgence,
@@ -108,6 +109,10 @@ export function FicheEquipement({ id }: { id: string }) {
     if (champPhoto.current) champPhoto.current.value = "";
   }
 
+  function marquerPrisEnCharge(incidentId: string) {
+    setIncidents(prendreEnCharge(id, incidentId));
+  }
+
   return (
     <>
       <EnTete persona={persona} onChangerDeRole={changerDeRole} />
@@ -179,6 +184,13 @@ export function FicheEquipement({ id }: { id: string }) {
                 <span className={styles.r}>
                   {i.statut === "en_attente" && <span className="st s-grey">En attente d&rsquo;envoi</span>}
                   <span className={`st ${CLASSES_URGENCE[i.urgence]}`}>{LIBELLES_URGENCE[i.urgence]}</span>
+                  {i.prisEnCharge ? (
+                    <span className="st s-ok">Pris en charge</span>
+                  ) : (
+                    <button type="button" className="btn sec" onClick={() => marquerPrisEnCharge(i.id)}>
+                      Prendre en charge
+                    </button>
+                  )}
                 </span>
               </div>
             ))}

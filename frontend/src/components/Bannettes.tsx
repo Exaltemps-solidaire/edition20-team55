@@ -97,7 +97,7 @@ export function Bannettes({ persona, version }: Props) {
               </span>
               <span className={styles.r}>
                 <span className={styles.m}>{nomAttribue}</span>
-                <span className="st s-grey">À prendre</span>
+                <span className={`st ${i.prisEnCharge ? "s-ok" : "s-grey"}`}>{i.prisEnCharge ? "Pris en charge" : "À prendre"}</span>
               </span>
             </Link>
           );
