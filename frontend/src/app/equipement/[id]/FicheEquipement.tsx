@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { EnTete } from "@/components/EnTete";
 import { trouverPersona, type Persona } from "@/lib/personas";
@@ -36,6 +36,18 @@ export function FicheEquipement({ id }: { id: string }) {
   const [photo, setPhoto] = useState("");
   const [urgence, setUrgence] = useState<Urgence | "">("");
   const [erreur, setErreur] = useState<string | null>(null);
+  const champPhoto = useRef<HTMLInputElement>(null);
+
+  function choisirPhoto(e: ChangeEvent<HTMLInputElement>) {
+    const fichier = e.target.files?.[0];
+    if (!fichier) {
+      setPhoto("");
+      return;
+    }
+    const lecteur = new FileReader();
+    lecteur.onload = () => setPhoto(typeof lecteur.result === "string" ? lecteur.result : "");
+    lecteur.readAsDataURL(fichier);
+  }
 
   useEffect(() => {
     if (!persona) router.replace("/");
@@ -77,6 +89,7 @@ export function FicheEquipement({ id }: { id: string }) {
     setPhoto("");
     setUrgence("");
     setErreur(null);
+    if (champPhoto.current) champPhoto.current.value = "";
   }
 
   return (
@@ -107,7 +120,7 @@ export function FicheEquipement({ id }: { id: string }) {
             </label>
             <label>
               Photo
-              <input value={photo} onChange={(e) => setPhoto(e.target.value)} placeholder="Nom du fichier photo" />
+              <input type="file" accept="image/*" ref={champPhoto} onChange={choisirPhoto} />
             </label>
             <label>
               Urgence
@@ -134,13 +147,15 @@ export function FicheEquipement({ id }: { id: string }) {
             {incidents.length === 0 && <p className={styles.vide}>Aucun incident signalé pour l&rsquo;instant.</p>}
             {incidents.map((i) => (
               <div className="row" key={i.id}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- data URL locale, pas une ressource à optimiser */}
+                <img className={styles.photo} src={i.photo} alt="" />
                 <span>
                   <span className={styles.t}>
                     {i.type} · {i.categorie}
                   </span>
                   <br />
                   <span className={styles.m}>
-                    {new Date(i.date).toLocaleString("fr-FR")} · {i.auteur} · {i.photo}
+                    {new Date(i.date).toLocaleString("fr-FR")} · {i.auteur}
                   </span>
                   <br />
                   <span className={styles.m}>{i.constat}</span>

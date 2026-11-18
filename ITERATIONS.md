@@ -78,6 +78,7 @@
     - `frontend/src/app/equipement/[id]/page.tsx`, `FicheEquipement.tsx`, `page.module.css` — fiche équipement, formulaire de signalement, liste des incidents (critères 1, 2, 3).
     - `frontend/src/app/parc/page.tsx` — lignes cliquables vers la fiche équipement, badge rouge calculé depuis les incidents en localStorage (critère 3).
     - `e2e/demo.spec.ts` — étapes de démo ajoutées (non exécutable sur cette machine, cf. ci-dessus).
+  - **Correction après signalement (demande du développeur)** : le champ photo simulait un vrai fichier par un simple texte libre, ce qui ne permettait aucun upload réel. Corrigé en 1 minute de codage : `input[type=file]` + lecture en `data:` URL via `FileReader`, stockée telle quelle dans `Incident.photo` (toujours une simple chaîne, pas de changement de type) et affichée en vignette dans la liste des incidents au lieu du texte brut. Aucun backend de stockage ajouté : cohérent avec le choix déjà fait de tout garder en `localStorage` pour cette itération, et la CSP du front autorise déjà `img-src ... data:`. Fichiers touchés : `frontend/src/app/equipement/[id]/FicheEquipement.tsx`, `page.module.css`, `e2e/demo.spec.ts` (utilise `setInputFiles` sur `frontend/public/file.svg`).
 
 ## Itération 3 : Le signalement fonctionne sans réseau
 

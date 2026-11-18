@@ -107,6 +107,15 @@
   font-size: 13px;
 }
 
+.photo {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex: none;
+  background: var(--subtle);
+}
+
 .t {
   font-weight: 620;
   color: var(--strong);

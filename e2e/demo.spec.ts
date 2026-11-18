@@ -25,7 +25,7 @@ test("Démo : le cas passant", async ({ page }) => {
     await page.getByPlaceholder("Ex. Filet déchiré").fill("Panier cassé");
     await page.getByPlaceholder("Ex. Usure").fill("Casse");
     await page.getByPlaceholder("Décrivez ce que vous observez").fill("Le panneau est tombé");
-    await page.getByPlaceholder("Nom du fichier photo").fill("photo.jpg");
+    await page.locator('input[type="file"]').setInputFiles("frontend/public/file.svg");
     await page.getByLabel("Urgence").selectOption("danger");
     await page.getByRole("button", { name: "Envoyer le signalement" }).click();
     await expect(page.getByText("Panier cassé · Casse")).toBeVisible();
