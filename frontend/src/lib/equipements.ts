@@ -1,5 +1,5 @@
 // Vocabulaire et villes repris du prototype (cadrage/4-prototype.md) : noms de villes et de terrains publics.
-export type EtatEquipement = "ok" | "grey";
+export type EtatEquipement = "ok" | "grey" | "bad";
 
 export type Equipement = {
   id: string;
@@ -20,4 +20,5 @@ export const EQUIPEMENTS: Equipement[] = [
 export const ETATS: Record<EtatEquipement, { libelle: string; classe: string }> = {
   ok: { libelle: "Vérifié, RAS", classe: "s-ok" },
   grey: { libelle: "Pas d'info récente", classe: "s-grey" },
+  bad: { libelle: "Incident signalé", classe: "s-bad" },
 };

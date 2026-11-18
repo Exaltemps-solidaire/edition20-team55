@@ -65,7 +65,19 @@
 - **Fichiers prévus** : page fiche équipement, formulaire de signalement, route API de création d'incident, modèle incident/équipement, mise à jour de la liste équipements
 - **Tests unitaires prévus** : 2 — validation des champs obligatoires du formulaire ; règle « urgence Danger ⇒ équipement rouge ».
 - **Étapes ajoutées à la démo** : depuis l'écran principal, ouvrir un équipement, signaler un incident « Danger », vérifier qu'il apparaît en rouge dans la liste.
-- **Bilan** : _à remplir en fin d'itération._
+- **Bilan** :
+  - Durée de codage réelle : 11 minutes (budget cible 5 min annoncé par le développeur largement dépassé, alarme des 8 minutes déclenchée). Dépassement expliqué pour une bonne part par un sous-agent lancé en parallèle sur l'adoption de `ressources/build-spec.md`/`ressources/index.html` comme références (hors scope métier de cette itération, voir commit `7ab43a6`), qui a occupé le même chrono sans être du codage de signalement. Le développeur a choisi de finaliser plutôt que de s'arrêter à mi-chemin.
+  - Critères d'acceptation : les 3 sont satisfaits — formulaire complet (type, catégorie, constat, photo, urgence) crée un incident « Nouveau » daté avec l'auteur courant ; un champ manquant bloque l'envoi avec un message listant les champs à compléter (`champsManquants`) ; un incident « Danger » fait passer l'équipement en rouge (« Incident signalé ») à la fois sur sa fiche et dans la liste `/parc` (`aUnIncidentDanger`).
+  - Bug corrigé en cours d'itération : la redirection « pas de persona » était appelée pendant le rendu au lieu d'un `useEffect`, ce qui faisait échouer le build statique (`ReferenceError: location is not defined` pendant `generateStaticParams`). Corrigée pour suivre le même pattern que `parc/page.tsx`.
+  - Reporté : rien de prévu à cette itération n'a été reporté.
+  - Hors DoD, tenté : mise à jour de `e2e/demo.spec.ts` avec le parcours « ouvrir un équipement → signaler un incident Danger → le voir en rouge dans la liste ». Toujours non exécutable sur cette machine (Chromium/`libnspr4.so` manquant, cf. itération 1) — signalé sans bloquer.
+  - **Modifications** :
+    - `frontend/src/lib/incidents.ts` — types `Incident`/`SaisieIncident`, `champsManquants`, `aUnIncidentDanger`, `chargerIncidents`, `ajouterIncident` (critères 1, 2, 3).
+    - `frontend/src/lib/incidents.test.ts` — 4 tests Vitest sur `champsManquants` et `aUnIncidentDanger` (DoD point 2).
+    - `frontend/src/lib/equipements.ts` — ajout de l'état `bad` (« Incident signalé ») (critère 3).
+    - `frontend/src/app/equipement/[id]/page.tsx`, `FicheEquipement.tsx`, `page.module.css` — fiche équipement, formulaire de signalement, liste des incidents (critères 1, 2, 3).
+    - `frontend/src/app/parc/page.tsx` — lignes cliquables vers la fiche équipement, badge rouge calculé depuis les incidents en localStorage (critère 3).
+    - `e2e/demo.spec.ts` — étapes de démo ajoutées (non exécutable sur cette machine, cf. ci-dessus).
 
 ## Itération 3 : Le signalement fonctionne sans réseau
 
